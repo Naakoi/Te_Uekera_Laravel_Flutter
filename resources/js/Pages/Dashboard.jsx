@@ -1,0 +1,71 @@
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, Link } from '@inertiajs/react';
+
+export default function Dashboard({ auth }) {
+    const user = auth.user;
+
+    return (
+        <AuthenticatedLayout
+            user={auth.user}
+            header="Main Dashboard"
+        >
+            <Head title="Dashboard" />
+
+            <div className="pb-12">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] overflow-hidden">
+                        <div className="p-10 md:p-16 text-gray-900">
+                            <div className="border-l-8 border-[#be1e2d] pl-8 mb-16">
+                                <h3 className="text-5xl font-black uppercase tracking-tighter italic font-sans">Welcome, {user.name}!</h3>
+                                <div className="mt-3 flex items-center gap-3">
+                                    <span className="text-xs font-black uppercase tracking-[0.2em] text-[#1e3a8a] opacity-60">Authenticated Session</span>
+                                    <span className="bg-[#1a1a1a] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{user.role}</span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                                {user.role === 'admin' && (
+                                    <Link
+                                        href={route('admin.dashboard')}
+                                        className="group p-10 bg-white/50 backdrop-blur-xl border border-black/5 rounded-[2.5rem] shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all flex flex-col items-center text-center relative overflow-hidden"
+                                    >
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#1e3a8a]/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
+                                        <div className="w-20 h-20 bg-[#1e3a8a] text-white rounded-3xl flex items-center justify-center mb-6 group-hover:bg-[#1a1a1a] transition-colors shadow-lg shadow-blue-900/20">
+                                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                        </div>
+                                        <span className="font-sans font-black uppercase tracking-tight text-2xl text-[#1a1a1a]">System Registry</span>
+                                        <span className="text-[10px] mt-3 font-black uppercase tracking-[0.2em] opacity-30 italic">Administrator Access</span>
+                                    </Link>
+                                )}
+                                {(user.role === 'staff' || user.role === 'admin') && (
+                                    <Link
+                                        href={route('staff.dashboard')}
+                                        className="group p-10 bg-white/50 backdrop-blur-xl border border-black/5 rounded-[2.5rem] shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all flex flex-col items-center text-center relative overflow-hidden"
+                                    >
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#be1e2d]/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
+                                        <div className="w-20 h-20 bg-[#be1e2d] text-white rounded-3xl flex items-center justify-center mb-6 group-hover:bg-[#1a1a1a] transition-colors shadow-lg shadow-red-900/20">
+                                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        </div>
+                                        <span className="font-sans font-black uppercase tracking-tight text-2xl text-[#1a1a1a]">Editorial Archive</span>
+                                        <span className="text-[10px] mt-3 font-black uppercase tracking-[0.2em] opacity-30 italic">Staff Control Portal</span>
+                                    </Link>
+                                )}
+                                <Link
+                                    href={route('documents.index')}
+                                    className="group p-10 bg-[#ffde00] border border-black/5 rounded-[2.5rem] shadow-xl hover:shadow-[#ffde00]/40 hover:-translate-y-2 transition-all flex flex-col items-center text-center relative overflow-hidden"
+                                >
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-black/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
+                                    <div className="w-20 h-20 bg-[#1e3a8a] text-white rounded-3xl flex items-center justify-center mb-6 group-hover:bg-[#1a1a1a] transition-colors shadow-lg shadow-blue-900/30">
+                                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                                    </div>
+                                    <span className="font-sans font-black uppercase tracking-tight text-2xl text-[#1e3a8a]">Online Newsstand</span>
+                                    <span className="text-[10px] mt-3 font-black uppercase tracking-[0.2em] text-[#be1e2d] italic">Browse & Subscribe</span>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </AuthenticatedLayout>
+    );
+}
