@@ -18,8 +18,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _isGridView = true;
   String _searchQuery = '';
-  String _sortBy =
-      'newest'; // 'newest', 'oldest', 'price_low', 'price_high', 'alphabetical'
+  String _sortBy = 'newest'; // 'newest', 'oldest', 'alphabetical'
   String _filterStatus = 'all'; // 'all', 'purchased', 'available'
 
   bool _isNew(DocumentModel doc) {
@@ -71,20 +70,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
           ),
         );
         break;
-      case 'price_low':
-        filtered.sort(
-          (a, b) => (double.tryParse(a.price) ?? 0).compareTo(
-            double.tryParse(b.price) ?? 0,
-          ),
-        );
-        break;
-      case 'price_high':
-        filtered.sort(
-          (a, b) => (double.tryParse(b.price) ?? 0).compareTo(
-            double.tryParse(a.price) ?? 0,
-          ),
-        );
-        break;
+
       case 'alphabetical':
         filtered.sort((a, b) => a.title.compareTo(b.title));
         break;
@@ -425,10 +411,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                         const SizedBox(width: 16),
                         // Sorts
                         _buildSortChip('Newest', 'newest'),
-                        const SizedBox(width: 8),
-                        _buildSortChip('Price: Low', 'price_low'),
-                        const SizedBox(width: 8),
-                        _buildSortChip('Price: High', 'price_high'),
+
                         const SizedBox(width: 8),
                         _buildSortChip('A-Z', 'alphabetical'),
                       ],
