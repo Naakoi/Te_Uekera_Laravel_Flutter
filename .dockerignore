@@ -1,0 +1,12 @@
+node_modules
+vendor
+mobile
+.git
+.github
+*.log
+storage/*.key
+.env
+Dockerfile
+.dockerignore
+mobile.zip
+releases_linux.json
