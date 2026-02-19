@@ -49,4 +49,4 @@ RUN composer install --no-dev --optimize-autoloader
 EXPOSE 80
 
 # Start Apache
-CMD ["apache2-foreground"]
+CMD ["sh", "-c", "php artisan migrate --force && apache2-foreground"]
