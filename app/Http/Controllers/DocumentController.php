@@ -26,8 +26,7 @@ class DocumentController extends Controller
 
         $documents = $documents->map(function ($doc) use ($globalActivated) {
             $doc->has_access = $globalActivated || $this->hasAccess($doc);
-
-            $doc->page_count = 0; // Defaulting to 0 since exec is disabled on server
+            $doc->page_count = $doc->page_count ?? $this->countPdfPages(storage_path('app/' . $doc->file_path));
             return $doc;
         });
 
@@ -41,11 +40,9 @@ class DocumentController extends Controller
     {
         $documents = Document::latest()->get();
 
-        // Add access status for the authenticated user or device
         $documents = $documents->map(function ($doc) {
             $doc->has_access = $this->hasAccess($doc);
-
-            $doc->page_count = 0;
+            $doc->page_count = $doc->page_count ?? $this->countPdfPages(storage_path('app/' . $doc->file_path));
             return $doc;
         });
 
@@ -69,7 +66,7 @@ class DocumentController extends Controller
             abort(403, 'You must purchase or activate this document first.');
         }
 
-        $pageCount = 0; // Defaulting to 0 since exec is disabled on server
+        $pageCount = $this->countPdfPages(storage_path('app/' . $document->file_path));
 
         return Inertia::render('Documents/Viewer', [
             'document' => $document,
@@ -114,15 +111,27 @@ class DocumentController extends Controller
             \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory($pageCacheDir);
             $pdfPath = storage_path('app/' . $document->file_path);
             $outputPath = storage_path('app/' . $pageCachePath);
-            $outputPrefix = str_replace('.png', '', $outputPath);
 
-            // Generating page images on the fly is disabled since exec/pdftoppm is unavailable
-            Log::warning("pdftoppm generation attempted but exec is disabled.");
+            // Generating page images on the fly using Ghostscript
+            Log::info("Generating page $page for doc {$document->id} using Ghostscript");
+            $command = sprintf(
+                "gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r100 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
+                $page,
+                $page,
+                escapeshellarg($outputPath),
+                escapeshellarg($pdfPath)
+            );
+            $output = [];
+            $return_var = -1;
+            \exec($command, $output, $return_var);
+
+            if ($return_var !== 0) {
+                Log::error("Ghostscript failed: " . implode("\n", $output));
+            }
         }
 
         if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($pageCachePath)) {
-            // Return placeholder or error
-            abort(404, 'Page image not pre-generated.');
+            abort(404, 'Page image generation failed.');
         }
 
         return response()->file(storage_path('app/' . $pageCachePath));
@@ -216,7 +225,7 @@ class DocumentController extends Controller
         }
 
         $documents = $documents->map(function ($doc) {
-            $doc->page_count = 0;
+            $doc->page_count = $doc->page_count ?? $this->countPdfPages(storage_path('app/' . $doc->file_path));
             return $doc;
         });
 
@@ -228,5 +237,36 @@ class DocumentController extends Controller
     public function download(Document $document)
     {
         abort(403, 'Downloading is disabled. Documents can only be viewed within the library.');
+    }
+
+    private function countPdfPages($path)
+    {
+        if (!file_exists($path))
+            return 0;
+
+        // Try to get count using Ghostscript (fastest and most accurate)
+        $command = sprintf("gs -q -dNODISPLAY -c \"(%s) (r) file runpdfbegin pdfpagecount = quit\" 2>&1", $path);
+        $output = [];
+        $return_var = -1;
+        \exec($command, $output, $return_var);
+
+        if ($return_var === 0 && !empty($output)) {
+            return (int) trim($output[0]);
+        }
+
+        // Fallback to pure PHP if GS fails
+        $fp = @fopen($path, "rb");
+        if (!$fp)
+            return 1;
+
+        $count = 0;
+        while (!feof($fp)) {
+            $line = fread($fp, 8192);
+            if (preg_match_all("/\/Page\W/", $line, $matches)) {
+                $count += count($matches[0]);
+            }
+        }
+        fclose($fp);
+        return max(1, $count);
     }
 }
