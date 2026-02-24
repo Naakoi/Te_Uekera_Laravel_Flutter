@@ -142,11 +142,18 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
               scrollPhysics: const BouncingScrollPhysics(),
               builder: (BuildContext context, int index) {
                 final pageNum = index + 1;
-                // Add device_id and token to URL to bypass CORS/header preflight issues on Web
+                // Build image URL carefully to avoid "null" strings being sent as parameters
                 String imageUrl =
-                    '${ApiClient.baseUrl}/documents/${widget.document.id}/pages/$pageNum?device_id=$_deviceId';
+                    '${ApiClient.baseUrl}/documents/${widget.document.id}/pages/$pageNum';
+                List<String> queryParams = [];
+                if (_deviceId != null) {
+                  queryParams.add('device_id=$_deviceId');
+                }
                 if (_authToken != null) {
-                  imageUrl += '&token=$_authToken';
+                  queryParams.add('token=$_authToken');
+                }
+                if (queryParams.isNotEmpty) {
+                  imageUrl += '?${queryParams.join('&')}';
                 }
 
                 return PhotoViewGalleryPageOptions(

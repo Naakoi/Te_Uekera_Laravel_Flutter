@@ -108,14 +108,29 @@ class DocumentController extends Controller
         $pageCachePath = "{$pageCacheDir}/page-{$page}.png";
 
         if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($pageCachePath)) {
-            // Since exec is disabled on the web server, we cannot generate images on the fly.
-            // We must rely on pre-generated images or return a 404.
-            Log::warning("Page image $page not found for doc {$document->id} and generation is disabled.");
-            abort(404, 'Page not found.');
-        }
+            \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory($pageCacheDir);
+            $pdfPath = storage_path('app/' . $document->file_path);
+            $outputPath = storage_path('app/' . $pageCachePath);
 
-        if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($pageCachePath)) {
-            abort(404, 'Page image generation failed.');
+            Log::info("Generating page $page for doc {$document->id} using Ghostscript");
+
+            // Using Ghostscript as pdftoppm may not be available. We use -dNOSAFER as it was required for countPdfPages.
+            $command = sprintf(
+                "/usr/bin/gs -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r150 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
+                $page,
+                $page,
+                escapeshellarg($outputPath),
+                escapeshellarg($pdfPath)
+            );
+
+            $output = [];
+            $return_var = -1;
+            \exec($command, $output, $return_var);
+
+            if ($return_var !== 0) {
+                Log::error("Ghostscript page generation failed: " . implode("\n", $output));
+                abort(500, 'Page image generation failed.');
+            }
         }
 
         return response()->file(storage_path('app/' . $pageCachePath));
