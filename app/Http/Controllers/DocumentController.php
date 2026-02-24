@@ -30,10 +30,12 @@ class DocumentController extends Controller
 
             // Add page count for PWA caching
             $pdfPath = storage_path('app/' . $doc->file_path);
-            $result = \Illuminate\Support\Facades\Process::run(['pdfinfo', $pdfPath]);
             $doc->page_count = 0;
-            if ($result->successful()) {
-                preg_match('/Pages:\s+(\d+)/', $result->output(), $matches);
+            $output = [];
+            $return_var = -1;
+            exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
+            if ($return_var === 0) {
+                preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
                 $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;
             }
 
@@ -56,14 +58,16 @@ class DocumentController extends Controller
 
             // Add page count for mobile viewer
             $pdfPath = storage_path('app/' . $doc->file_path);
-            $result = \Illuminate\Support\Facades\Process::run(['pdfinfo', $pdfPath]);
             $doc->page_count = 0;
-            if ($result->successful()) {
-                preg_match('/Pages:\s+(\d+)/', $result->output(), $matches);
+            $output = [];
+            $return_var = -1;
+            exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
+            if ($return_var === 0) {
+                preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
                 $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;
                 Log::info("Document {$doc->id} page count: {$doc->page_count}");
             } else {
-                Log::error("pdfinfo failed for doc {$doc->id}: " . $result->errorOutput());
+                Log::error("pdfinfo failed for doc {$doc->id}: " . implode("\n", $output));
                 // Fallback attempt with specific path if needed, or check if file exists
                 if (!file_exists($pdfPath)) {
                     Log::error("File not found at $pdfPath");
@@ -95,10 +99,12 @@ class DocumentController extends Controller
 
         // Get page count using pdfinfo
         $pdfPath = storage_path('app/' . $document->file_path);
-        $result = \Illuminate\Support\Facades\Process::run(['pdfinfo', $pdfPath]);
         $pageCount = 0;
-        if ($result->successful()) {
-            preg_match('/Pages:\s+(\d+)/', $result->output(), $matches);
+        $output = [];
+        $return_var = -1;
+        exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
+        if ($return_var === 0) {
+            preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
             $pageCount = isset($matches[1]) ? (int) $matches[1] : 0;
         }
 
@@ -148,22 +154,13 @@ class DocumentController extends Controller
 
             // Using high resolution for better reading experience
             Log::info("Generating page $page for doc {$document->id}");
-            $processResult = \Illuminate\Support\Facades\Process::run([
-                'pdftoppm',
-                '-f',
-                (string) $page,
-                '-l',
-                (string) $page,
-                '-png',
-                '-singlefile',
-                '-r',
-                '200',
-                $pdfPath,
-                $outputPrefix
-            ]);
+            $command = sprintf("pdftoppm -f %d -l %d -png -singlefile -r 200 %s %s 2>&1", $page, $page, escapeshellarg($pdfPath), escapeshellarg($outputPrefix));
+            $output = [];
+            $return_var = -1;
+            exec($command, $output, $return_var);
 
-            if (!$processResult->successful()) {
-                Log::error("pdftoppm failed: " . $processResult->errorOutput());
+            if ($return_var !== 0) {
+                Log::error("pdftoppm failed: " . implode("\n", $output));
             }
         }
 
@@ -263,10 +260,12 @@ class DocumentController extends Controller
 
         $documents = $documents->map(function ($doc) {
             $pdfPath = storage_path('app/' . $doc->file_path);
-            $result = \Illuminate\Support\Facades\Process::run(['pdfinfo', $pdfPath]);
             $doc->page_count = 0;
-            if ($result->successful()) {
-                preg_match('/Pages:\s+(\d+)/', $result->output(), $matches);
+            $output = [];
+            $return_var = -1;
+            exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
+            if ($return_var === 0) {
+                preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
                 $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;
             }
             return $doc;

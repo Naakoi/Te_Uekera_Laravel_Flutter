@@ -70,10 +70,15 @@ class StaffController extends Controller
             $thumbnailPrefix = $thumbnailDir . '/' . pathinfo($thumbnailFilename, PATHINFO_FILENAME);
 
             // pdftoppm -f 1 -l 1 -png -singlefile input_pdf output_prefix
-            $result = Process::run(['pdftoppm', '-f', '1', '-l', '1', '-png', '-singlefile', $pdfPath, $thumbnailPrefix]);
+            $command = sprintf("pdftoppm -f 1 -l 1 -png -singlefile %s %s 2>&1", escapeshellarg($pdfPath), escapeshellarg($thumbnailPrefix));
+            $output = [];
+            $return_var = -1;
+            exec($command, $output, $return_var);
 
-            if ($result->successful()) {
+            if ($return_var === 0) {
                 $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
+            } else {
+                \Illuminate\Support\Facades\Log::error("pdftoppm failed on upload: " . implode("\n", $output));
             }
         }
 
