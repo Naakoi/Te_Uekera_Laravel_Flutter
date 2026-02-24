@@ -115,11 +115,11 @@ class DocumentController extends Controller
             // Generating page images on the fly using Ghostscript
             Log::info("Generating page $page for doc {$document->id} using Ghostscript");
             $command = sprintf(
-                "gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r100 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
+                "/usr/bin/gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r100 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
                 $page,
                 $page,
-                escapeshellarg($outputPath),
-                escapeshellarg($pdfPath)
+                \escapeshellarg($outputPath),
+                \escapeshellarg($pdfPath)
             );
             $output = [];
             $return_var = -1;
@@ -193,7 +193,7 @@ class DocumentController extends Controller
     public function library()
     {
         $user = auth()->user();
-        $purchasedIds = $user->purchases()->pluck('document_id')->toArray();
+        $purchasedIds = $user ? $user->purchases()->pluck('document_id')->toArray() : [];
 
         $deviceId = request()->cookie('device_id') ?? request()->header('X-Device-Id');
         $activatedIds = [];
@@ -217,7 +217,7 @@ class DocumentController extends Controller
             }
         }
 
-        if ($fullAccess || $user->hasActiveSubscription()) {
+        if ($fullAccess || ($user && $user->hasActiveSubscription())) {
             $documents = Document::latest()->get();
         } else {
             $allIds = array_unique(array_merge($purchasedIds, $activatedIds));
@@ -245,13 +245,17 @@ class DocumentController extends Controller
             return 0;
 
         // Try to get count using Ghostscript (fastest and most accurate)
-        $command = sprintf("gs -q -dNODISPLAY -c \"(%s) (r) file runpdfbegin pdfpagecount = quit\" 2>&1", $path);
+        // Using a safer way to pass the filename to GS
+        $command = sprintf("/usr/bin/gs -q -dNODISPLAY -dNOSAFER -c \"(%s) (r) file runpdfbegin pdfpagecount = quit\" 2>&1", str_replace(['(', ')'], ['\\(', '\\)'], $path));
         $output = [];
         $return_var = -1;
         \exec($command, $output, $return_var);
 
         if ($return_var === 0 && !empty($output)) {
-            return (int) trim($output[0]);
+            $lastLine = trim(end($output));
+            if (is_numeric($lastLine)) {
+                return (int) $lastLine;
+            }
         }
 
         // Fallback to pure PHP if GS fails
