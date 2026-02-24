@@ -583,7 +583,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 height: 120,
                 child: document.thumbnailPath != null
                     ? Image.network(
-                        'http://127.0.0.1:8000/api/images/${document.thumbnailPath}',
+                        'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${document.thumbnailPath}',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
                             _buildPlaceholderThumbnail(),
@@ -721,7 +721,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                     color: const Color(0xFFe5e5e5),
                     child: document.thumbnailPath != null
                         ? Image.network(
-                            'http://127.0.0.1:8000/api/images/${document.thumbnailPath}',
+                            'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${document.thumbnailPath}',
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
                                 _buildPlaceholder(document),

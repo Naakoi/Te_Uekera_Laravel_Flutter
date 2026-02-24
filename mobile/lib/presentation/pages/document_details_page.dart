@@ -210,7 +210,8 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
         MaterialPageRoute(
           builder: (context) => CheckoutWebPage(
             initialUrl: url,
-            successUrl: 'http://127.0.0.1:8000/api/payments/stripe/success',
+            successUrl:
+                'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/payments/stripe/success',
             onPaymentSuccess: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -301,7 +302,8 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
           OutlinedButton(
             onPressed: () async {
               Navigator.pop(context);
-              const url = 'http://127.0.0.1:8000/register';
+              const url =
+                  'https://phplaravel-1593166-6235114.cloudwaysapps.com/register';
               final uri = Uri.parse(url);
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri);
@@ -655,7 +657,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                             clipBehavior: Clip.antiAlias,
                             child: widget.document.thumbnailPath != null
                                 ? Image.network(
-                                    'http://127.0.0.1:8000/api/images/${widget.document.thumbnailPath}',
+                                    'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${widget.document.thumbnailPath}',
                                     fit: BoxFit.cover,
                                     errorBuilder:
                                         (context, error, stackTrace) =>
@@ -744,7 +746,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                       clipBehavior: Clip.antiAlias,
                       child: widget.document.thumbnailPath != null
                           ? Image.network(
-                              'http://127.0.0.1:8000/api/images/${widget.document.thumbnailPath}',
+                              'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${widget.document.thumbnailPath}',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   const Center(

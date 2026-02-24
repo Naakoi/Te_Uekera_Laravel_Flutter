@@ -4,7 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class ApiClient {
   final Dio dio;
   final FlutterSecureStorage storage;
-  static const String baseUrl = 'https://te-uekera-backend.onrender.com/api';
+  static const String baseUrl =
+      'https://phplaravel-1593166-6235114.cloudwaysapps.com/api';
 
   ApiClient({required this.dio, required this.storage}) {
     dio.options.baseUrl = baseUrl;

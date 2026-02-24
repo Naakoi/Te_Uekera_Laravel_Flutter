@@ -447,7 +447,8 @@ class _LibraryPageState extends State<LibraryPage> {
           const SizedBox(height: 16),
           TextButton(
             onPressed: () async {
-              const url = 'http://127.0.0.1:8000/register';
+              const url =
+                  'https://phplaravel-1593166-6235114.cloudwaysapps.com/register';
               final uri = Uri.parse(url);
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri);
@@ -534,7 +535,7 @@ class _LibraryPageState extends State<LibraryPage> {
                     color: const Color(0xFFe5e5e5),
                     child: document.thumbnailPath != null
                         ? Image.network(
-                            'http://127.0.0.1:8000/api/images/${document.thumbnailPath}',
+                            'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${document.thumbnailPath}',
                             fit: BoxFit.cover,
                           )
                         : const Center(
@@ -629,7 +630,7 @@ class _LibraryPageState extends State<LibraryPage> {
             image: document.thumbnailPath != null
                 ? DecorationImage(
                     image: NetworkImage(
-                      'http://127.0.0.1:8000/api/images/${document.thumbnailPath}',
+                      'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${document.thumbnailPath}',
                     ),
                     fit: BoxFit.cover,
                   )

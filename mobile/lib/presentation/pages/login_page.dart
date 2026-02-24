@@ -246,7 +246,8 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24),
                   OutlinedButton(
                     onPressed: () async {
-                      const url = 'http://127.0.0.1:8000/register';
+                      const url =
+                          'https://phplaravel-1593166-6235114.cloudwaysapps.com/register';
                       final uri = Uri.parse(url);
                       if (await canLaunchUrl(uri)) {
                         await launchUrl(uri);
