@@ -241,36 +241,6 @@ class DocumentController extends Controller
 
     private function countPdfPages($path)
     {
-        if (!file_exists($path))
-            return 0;
-
-        // Try to get count using Ghostscript (fastest and most accurate)
-        // Using a safer way to pass the filename to GS
-        $command = sprintf("/usr/bin/gs -q -dNODISPLAY -dNOSAFER -c \"(%s) (r) file runpdfbegin pdfpagecount = quit\" 2>&1", str_replace(['(', ')'], ['\\(', '\\)'], $path));
-        $output = [];
-        $return_var = -1;
-        \exec($command, $output, $return_var);
-
-        if ($return_var === 0 && !empty($output)) {
-            $lastLine = trim(end($output));
-            if (is_numeric($lastLine)) {
-                return (int) $lastLine;
-            }
-        }
-
-        // Fallback to pure PHP if GS fails
-        $fp = @fopen($path, "rb");
-        if (!$fp)
-            return 1;
-
-        $count = 0;
-        while (!feof($fp)) {
-            $line = fread($fp, 8192);
-            if (preg_match_all("/\/Page\W/", $line, $matches)) {
-                $count += count($matches[0]);
-            }
-        }
-        fclose($fp);
-        return max(1, $count);
+        return 0; // Temporarily disabled to debug 500 error
     }
 }
