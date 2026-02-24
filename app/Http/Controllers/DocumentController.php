@@ -32,7 +32,7 @@ class DocumentController extends Controller
             $doc->page_count = 0;
             $output = [];
             $return_var = -1;
-            exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
+            \exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
             if ($return_var === 0) {
                 preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
                 $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;
@@ -60,7 +60,7 @@ class DocumentController extends Controller
             $doc->page_count = 0;
             $output = [];
             $return_var = -1;
-            exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
+            \exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
             if ($return_var === 0) {
                 preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
                 $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;
@@ -101,7 +101,7 @@ class DocumentController extends Controller
         $pageCount = 0;
         $output = [];
         $return_var = -1;
-        exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
+        \exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
         if ($return_var === 0) {
             preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
             $pageCount = isset($matches[1]) ? (int) $matches[1] : 0;
@@ -156,7 +156,7 @@ class DocumentController extends Controller
             $command = sprintf("pdftoppm -f %d -l %d -png -singlefile -r 200 %s %s 2>&1", $page, $page, escapeshellarg($pdfPath), escapeshellarg($outputPrefix));
             $output = [];
             $return_var = -1;
-            exec($command, $output, $return_var);
+            \exec($command, $output, $return_var);
 
             if ($return_var !== 0) {
                 Log::error("pdftoppm failed: " . implode("\n", $output));
@@ -262,7 +262,7 @@ class DocumentController extends Controller
             $doc->page_count = 0;
             $output = [];
             $return_var = -1;
-            exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
+            \exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
             if ($return_var === 0) {
                 preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
                 $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;

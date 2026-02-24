@@ -72,7 +72,7 @@ class StaffController extends Controller
             $command = sprintf("pdftoppm -f 1 -l 1 -png -singlefile %s %s 2>&1", escapeshellarg($pdfPath), escapeshellarg($thumbnailPrefix));
             $output = [];
             $return_var = -1;
-            exec($command, $output, $return_var);
+            \exec($command, $output, $return_var);
 
             if ($return_var === 0) {
                 $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
