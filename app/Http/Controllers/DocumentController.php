@@ -27,17 +27,7 @@ class DocumentController extends Controller
         $documents = $documents->map(function ($doc) use ($globalActivated) {
             $doc->has_access = $globalActivated || $this->hasAccess($doc);
 
-            // Add page count for PWA caching
-            $pdfPath = storage_path('app/' . $doc->file_path);
-            $doc->page_count = 0;
-            $output = [];
-            $return_var = -1;
-            \exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
-            if ($return_var === 0) {
-                preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
-                $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;
-            }
-
+            $doc->page_count = 0; // Defaulting to 0 since exec is disabled on server
             return $doc;
         });
 
@@ -55,24 +45,7 @@ class DocumentController extends Controller
         $documents = $documents->map(function ($doc) {
             $doc->has_access = $this->hasAccess($doc);
 
-            // Add page count for mobile viewer
-            $pdfPath = storage_path('app/' . $doc->file_path);
             $doc->page_count = 0;
-            $output = [];
-            $return_var = -1;
-            \exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
-            if ($return_var === 0) {
-                preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
-                $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;
-                Log::info("Document {$doc->id} page count: {$doc->page_count}");
-            } else {
-                Log::error("pdfinfo failed for doc {$doc->id}: " . implode("\n", $output));
-                // Fallback attempt with specific path if needed, or check if file exists
-                if (!file_exists($pdfPath)) {
-                    Log::error("File not found at $pdfPath");
-                }
-            }
-
             return $doc;
         });
 
@@ -96,16 +69,7 @@ class DocumentController extends Controller
             abort(403, 'You must purchase or activate this document first.');
         }
 
-        // Get page count using pdfinfo
-        $pdfPath = storage_path('app/' . $document->file_path);
-        $pageCount = 0;
-        $output = [];
-        $return_var = -1;
-        \exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
-        if ($return_var === 0) {
-            preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
-            $pageCount = isset($matches[1]) ? (int) $matches[1] : 0;
-        }
+        $pageCount = 0; // Defaulting to 0 since exec is disabled on server
 
         return Inertia::render('Documents/Viewer', [
             'document' => $document,
@@ -120,7 +84,8 @@ class DocumentController extends Controller
         }
 
         // Restrict raw PDF streaming to Staff and Admin to prevent easy extraction
-        if (!auth()->user()->isStaff() && !auth()->user()->isAdmin()) {
+        $currentUser = auth()->user();
+        if (!$currentUser || (!$currentUser->isStaff() && !$currentUser->isAdmin())) {
             abort(403, 'Direct file access is restricted. Please use the reader.');
         }
 
@@ -151,20 +116,13 @@ class DocumentController extends Controller
             $outputPath = storage_path('app/' . $pageCachePath);
             $outputPrefix = str_replace('.png', '', $outputPath);
 
-            // Using high resolution for better reading experience
-            Log::info("Generating page $page for doc {$document->id}");
-            $command = sprintf("pdftoppm -f %d -l %d -png -singlefile -r 200 %s %s 2>&1", $page, $page, escapeshellarg($pdfPath), escapeshellarg($outputPrefix));
-            $output = [];
-            $return_var = -1;
-            \exec($command, $output, $return_var);
-
-            if ($return_var !== 0) {
-                Log::error("pdftoppm failed: " . implode("\n", $output));
-            }
+            // Generating page images on the fly is disabled since exec/pdftoppm is unavailable
+            Log::warning("pdftoppm generation attempted but exec is disabled.");
         }
 
         if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($pageCachePath)) {
-            abort(404);
+            // Return placeholder or error
+            abort(404, 'Page image not pre-generated.');
         }
 
         return response()->file(storage_path('app/' . $pageCachePath));
@@ -258,15 +216,7 @@ class DocumentController extends Controller
         }
 
         $documents = $documents->map(function ($doc) {
-            $pdfPath = storage_path('app/' . $doc->file_path);
             $doc->page_count = 0;
-            $output = [];
-            $return_var = -1;
-            \exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>&1', $output, $return_var);
-            if ($return_var === 0) {
-                preg_match('/Pages:\s+(\d+)/', implode("\n", $output), $matches);
-                $doc->page_count = isset($matches[1]) ? (int) $matches[1] : 0;
-            }
             return $doc;
         });
 
