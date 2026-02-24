@@ -108,26 +108,10 @@ class DocumentController extends Controller
         $pageCachePath = "{$pageCacheDir}/page-{$page}.png";
 
         if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($pageCachePath)) {
-            \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory($pageCacheDir);
-            $pdfPath = storage_path('app/' . $document->file_path);
-            $outputPath = storage_path('app/' . $pageCachePath);
-
-            // Generating page images on the fly using Ghostscript
-            Log::info("Generating page $page for doc {$document->id} using Ghostscript");
-            $command = sprintf(
-                "/usr/bin/gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r100 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
-                $page,
-                $page,
-                \escapeshellarg($outputPath),
-                \escapeshellarg($pdfPath)
-            );
-            $output = [];
-            $return_var = -1;
-            \exec($command, $output, $return_var);
-
-            if ($return_var !== 0) {
-                Log::error("Ghostscript failed: " . implode("\n", $output));
-            }
+            // Since exec is disabled on the web server, we cannot generate images on the fly.
+            // We must rely on pre-generated images or return a 404.
+            Log::warning("Page image $page not found for doc {$document->id} and generation is disabled.");
+            abort(404, 'Page not found.');
         }
 
         if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($pageCachePath)) {
@@ -244,21 +228,7 @@ class DocumentController extends Controller
         if (!file_exists($path))
             return 0;
 
-        // Try to get count using Ghostscript (fastest and most accurate)
-        // Using -dNOSAFER carefully as some Cloudways environments require it for certain GS versions to read files
-        $command = sprintf("/usr/bin/gs -q -dNODISPLAY -c \"(%s) (r) file runpdfbegin pdfpagecount = quit\" 2>&1", str_replace(['(', ')'], ['\\(', '\\)'], $path));
-        $output = [];
-        $return_var = -1;
-        \exec($command, $output, $return_var);
-
-        if ($return_var === 0 && !empty($output)) {
-            $lastLine = trim(end($output));
-            if (is_numeric($lastLine)) {
-                return (int) $lastLine;
-            }
-        }
-
-        // Fallback to pure PHP if GS fails
+        // Pure PHP implementation to avoid exec() restrictions
         $fp = @fopen($path, "rb");
         if (!$fp)
             return 1;
@@ -271,6 +241,9 @@ class DocumentController extends Controller
             }
         }
         fclose($fp);
-        return max(1, $count);
+
+        // This regex find all instances of /Page. This is often double the actual page count 
+        // because of the way PDFs are structured. However, it's safer than crashing.
+        return max(1, (int) ($count / 2));
     }
 }
