@@ -9,8 +9,8 @@ class ApiClient {
 
   ApiClient({required this.dio, required this.storage}) {
     dio.options.baseUrl = baseUrl;
-    dio.options.connectTimeout = const Duration(seconds: 5);
-    dio.options.receiveTimeout = const Duration(seconds: 3);
+    dio.options.connectTimeout = const Duration(seconds: 30);
+    dio.options.receiveTimeout = const Duration(seconds: 30);
 
     dio.interceptors.add(
       InterceptorsWrapper(
