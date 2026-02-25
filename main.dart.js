@@ -96459,14 +96459,14 @@ $0(){var s=this.a
 s.f=!s.f},
 $S:0}
 A.avC.prototype={
-$2(a,b){var s=b+1,r=this.a,q=""+s,p=u.M+r.a.c.a+"/pages/"+q,o=A.b([],t.s),n=r.x
-if(n!=null)o.push("device_id="+n)
-n=r.w
-if(n!=null)o.push("token="+n)
-if(o.length!==0)p+="?"+B.b.bm(o,"&")
-n=r.r
-n===$&&A.a()
-return new A.DH(new A.lU(p,null),new A.ajX("page_"+q),new A.my("contained",0.8),new A.my("covered",2),B.ip,n,new A.avB(r,s))},
+$2(a,b){var s="contained",r=b+1,q=this.a,p=""+r,o=u.M+q.a.c.a+"/pages/"+p,n=A.b([],t.s),m=q.x
+if(m!=null)n.push("device_id="+m)
+m=q.w
+if(m!=null)n.push("token="+m)
+if(n.length!==0)o+="?"+B.b.bm(n,"&")
+m=q.r
+m===$&&A.a()
+return new A.DH(new A.lU(o,null),new A.ajX("page_"+p),new A.my(s,0.8),new A.my(s,10),B.ip,m,new A.avB(q,r))},
 $S:616}
 A.avB.prototype={
 $3(a,b,c){var s=null
