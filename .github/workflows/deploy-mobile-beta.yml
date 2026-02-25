@@ -1,0 +1,121 @@
+name: Build and Deploy Mobile Beta
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/deploy-mobile-beta.yml'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.19.0' # Use a stable version, or 'any'
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Build APK (Release)
+        working-directory: mobile
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.19.0'
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Build iOS No-Codesign
+        working-directory: mobile
+        run: |
+          flutter build ios --release --no-codesign
+          # Creating a payload directory and zip it up as an unsigned IPA
+          mkdir -p Payload
+          mv build/ios/iphoneos/Runner.app Payload/
+          zip -r app-release.ipa Payload
+          rm -rf Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-ipa
+          path: mobile/app-release.ipa
+
+  create-release:
+    name: Create Beta Release
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-apk
+          path: ./release-artifacts
+
+      - name: Download IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-ipa
+          path: ./release-artifacts
+
+      - name: Create or Update Tag
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git tag -f beta-latest
+          git push origin -f beta-latest
+
+      - name: Release to GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: beta-latest
+          name: "Latest Beta Release"
+          body: "Automated Beta build containing the latest changes from the main branch."
+          draft: false
+          prerelease: true
+          files: |
+            ./release-artifacts/app-release.apk
+            ./release-artifacts/app-release.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
