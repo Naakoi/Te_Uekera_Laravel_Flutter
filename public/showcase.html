@@ -1278,6 +1278,56 @@
             color: var(--red);
             border: 1px solid #eee;
         }
+
+        /* ── DOWNLOAD ── */
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .qr-card {
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            transition: transform .3s, border-color .3s;
+        }
+
+        .qr-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--red);
+        }
+
+        .qr-image {
+            width: 140px;
+            height: 140px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            margin: 0 auto 16px;
+        }
+
+        .qr-image img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .qr-label {
+            font-weight: 900;
+            font-size: 14px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .qr-sub {
+            font-size: 12px;
+            color: rgba(255, 255, 255, .4);
+        }
     </style>
 </head>
 
@@ -1864,8 +1914,23 @@
                         </div>
                     </div>
                 </div>
+                <div class="download-grid">
+                    <div class="qr-card">
+                        <div class="qr-image">
+                            <img src="assets/qr/android_qr.png" alt="Android QR Code">
+                        </div>
+                        <div class="qr-label">Android App</div>
+                        <div class="qr-sub">Scan to download APK</div>
+                    </div>
+                    <div class="qr-card">
+                        <div class="qr-image">
+                            <img src="assets/qr/ios_qr.png" alt="iOS QR Code">
+                        </div>
+                        <div class="qr-label">iOS App</div>
+                        <div class="qr-sub">Scan to download</div>
+                    </div>
+                </div>
             </div>
-        </div>
     </section>
 
     <!-- ROLES -->
