@@ -81,7 +81,7 @@ class StaffController extends Controller
             }
         }
 
-        Document::create([
+        $document = Document::create([
             'title' => $request->title,
             'description' => $request->description,
             'file_path' => $filePath,
@@ -90,7 +90,13 @@ class StaffController extends Controller
             'published_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Document uploaded successfully.');
+        // Dispatch background page generation so reader pages are ready
+        \Illuminate\Support\Facades\Artisan::queue('documents:generate-pages', [
+            '--document' => $document->id,
+            '--force' => true,
+        ]);
+
+        return redirect()->back()->with('success', 'Document uploaded successfully. Page images are being generated in the background.');
     }
 
     public function destroy(Document $document)

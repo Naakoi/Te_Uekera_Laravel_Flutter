@@ -104,37 +104,19 @@ class DocumentController extends Controller
             abort(403);
         }
 
-        $pageCacheDir = "pages/{$document->id}";
-        $pageCachePath = "{$pageCacheDir}/page-{$page}.png";
+        $pageCachePath = "pages/{$document->id}/page-{$page}.png";
+        $fullPath = storage_path('app/' . $pageCachePath);
 
-        if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($pageCachePath)) {
-            \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory($pageCacheDir);
-            $pdfPath = storage_path('app/' . $document->file_path);
-            $outputPath = storage_path('app/' . $pageCachePath);
-
-            Log::info("Generating page $page for doc {$document->id} using Ghostscript");
-
-            // Using Ghostscript as pdftoppm may not be available. We use -dNOSAFER as it was required for countPdfPages.
-            // Using 300 DPI for high resolution output so newspapers zoom clearly
-            $command = sprintf(
-                "/usr/bin/gs -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r300 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
-                $page,
-                $page,
-                escapeshellarg($outputPath),
-                escapeshellarg($pdfPath)
-            );
-
-            $output = [];
-            $return_var = -1;
-            \exec($command, $output, $return_var);
-
-            if ($return_var !== 0) {
-                Log::error("Ghostscript page generation failed: " . implode("\n", $output));
-                abort(500, 'Page image generation failed.');
-            }
+        if (!file_exists($fullPath)) {
+            // Pages must be pre-generated via: php artisan documents:generate-pages
+            Log::warning("Page image not found: {$pageCachePath}. Run: php artisan documents:generate-pages");
+            abort(404, 'Page image not found. Please contact support.');
         }
 
-        return response()->file(storage_path('app/' . $pageCachePath));
+        return response()->file($fullPath, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 
     public function hasAccess(Document $document)
