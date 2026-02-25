@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../../core/utils/api_client.dart';
 
 abstract class AuthRemoteDataSource {
@@ -12,12 +13,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final response = await apiClient.post('/login', data: {
-      'email': email,
-      'password': password,
-    });
-    
-    return response.data;
+    try {
+      final response = await apiClient.post(
+        '/login',
+        data: {'email': email, 'password': password},
+      );
+      return response.data;
+    } catch (e) {
+      if (e is DioException && e.response != null && e.response?.data != null) {
+        final Map<String, dynamic> data = e.response?.data;
+        if (data.containsKey('message')) {
+          throw Exception(data['message']);
+        }
+      }
+      throw Exception('Failed to connect to the server. Please try again.');
+    }
   }
 
   @override
