@@ -9,7 +9,7 @@ export default function Register() {
     useEffect(() => {
         const challenges = [
             { animal: 'Dog', translation: 'kamea' },
-            { animal: 'Cat', translation: 'katia' },
+            { animal: 'Cat', translation: 'katamwa' },
             { animal: 'Pig', translation: 'beeki' },
             { animal: 'Chicken', translation: 'moa' },
             { animal: 'Fish', translation: 'ika' }

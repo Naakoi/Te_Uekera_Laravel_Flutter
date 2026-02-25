@@ -37,7 +37,7 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'bot_trap' => 'nullable|string|max:0',
-            'human_verification' => 'required|in:kamea,Kamea,katia,Katia,beeki,Beeki,moa,Moa,ika,Ika,KAMEA,KATIA,BEEKI,MOA,IKA',
+            'human_verification' => 'required|in:kamea,Kamea,katamwa,Katamwa,beeki,Beeki,moa,Moa,ika,Ika,KAMEA,KATAMWA,BEEKI,MOA,IKA',
         ], [
             'email.unique' => 'This email address is already registered. Please login instead.',
             'human_verification.required' => 'Please complete the verification challenge.',
