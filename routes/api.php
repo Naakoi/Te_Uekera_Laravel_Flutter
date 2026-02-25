@@ -27,11 +27,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Payment Checkout
     Route::post('/payments/stripe/checkout', [App\Http\Controllers\StripeController::class, 'apiCheckout'])->name('api.stripe.checkout');
+
+    // Redeem Code — requires authenticated user
+    Route::post('/redeem-code', [App\Http\Controllers\RedeemCodeController::class, 'redeem']);
 });
 
 Route::get('/documents/{document}/pages/{page}', [App\Http\Controllers\DocumentController::class, 'pageImage']);
 
-Route::post('/redeem-code', [App\Http\Controllers\RedeemCodeController::class, 'redeem']);
+// Check status is public (read-only)
 Route::post('/check-status', [App\Http\Controllers\RedeemCodeController::class, 'checkStatus']);
 
 Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'apiIndex']);

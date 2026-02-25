@@ -56,6 +56,13 @@ class RedeemCodeController extends Controller
 
     public function redeem(Request $request)
     {
+        // Defence-in-depth: ensure the caller is authenticated via Sanctum
+        // (route is already guarded by auth:sanctum middleware, but we double-check here)
+        $userId = auth('sanctum')->id();
+        if (!$userId) {
+            return response()->json(['message' => 'You must be logged in to redeem a code.'], 401);
+        }
+
         $request->validate([
             'code' => 'required|string',
             'device_id' => 'required|string',
@@ -77,22 +84,42 @@ class RedeemCodeController extends Controller
             return response()->json(['message' => 'This code is for a different document.'], 422);
         }
 
-        // Check if this device already has this active activation (not expired)
-        $query = RedeemCode::where('device_id', $request->device_id)
+        $now = Carbon::now();
+
+        // Check if this device already has an active activation for this content (not expired)
+        $deviceQuery = RedeemCode::where('device_id', $request->device_id)
             ->where('is_used', true)
-            ->where(function ($q) {
+            ->where(function ($q) use ($now) {
                 $q->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', Carbon::now());
+                    ->orWhere('expires_at', '>', $now);
             });
 
         if ($redeemCode->document_id) {
-            $query->where('document_id', $redeemCode->document_id);
+            $deviceQuery->where('document_id', $redeemCode->document_id);
         } else {
-            $query->whereNull('document_id');
+            $deviceQuery->whereNull('document_id');
         }
 
-        if ($query->exists()) {
+        if ($deviceQuery->exists()) {
             return response()->json(['message' => 'This device is already activated for this content.'], 422);
+        }
+
+        // Check if this user already has an active activation for this content (on any device)
+        $userQuery = RedeemCode::where('user_id', $userId)
+            ->where('is_used', true)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', $now);
+            });
+
+        if ($redeemCode->document_id) {
+            $userQuery->where('document_id', $redeemCode->document_id);
+        } else {
+            $userQuery->whereNull('document_id');
+        }
+
+        if ($userQuery->exists()) {
+            return response()->json(['message' => 'Your account already has an active activation for this content.'], 422);
         }
 
         // Calculate expiration date
@@ -108,7 +135,7 @@ class RedeemCodeController extends Controller
             'device_id' => $request->device_id,
             'activated_at' => Carbon::now(),
             'expires_at' => $expiresAt,
-            'user_id' => auth('sanctum')->id(),
+            'user_id' => $userId,
         ]);
 
         return response()->json([
@@ -127,8 +154,9 @@ class RedeemCodeController extends Controller
         ]);
 
         $now = Carbon::now();
+        $userId = auth('sanctum')->id(); // May be null for unauthenticated callers
 
-        // Device activation (full access) - must not be expired
+        // Device activation (full access, no document) - must not be expired
         $deviceActivated = RedeemCode::where('device_id', $request->device_id)
             ->where('is_used', true)
             ->whereNull('document_id')
@@ -137,6 +165,19 @@ class RedeemCodeController extends Controller
                     ->orWhere('expires_at', '>', $now);
             })
             ->exists();
+
+        // Also check by user account (covers new/different devices) when logged in
+        $userFullAccess = false;
+        if ($userId) {
+            $userFullAccess = RedeemCode::where('user_id', $userId)
+                ->where('is_used', true)
+                ->whereNull('document_id')
+                ->where(function ($q) use ($now) {
+                    $q->whereNull('expires_at')
+                        ->orWhere('expires_at', '>', $now);
+                })
+                ->exists();
+        }
 
         // Document specific activation - must not be expired
         $documentActivated = false;
@@ -149,11 +190,25 @@ class RedeemCodeController extends Controller
                         ->orWhere('expires_at', '>', $now);
                 })
                 ->exists();
+
+            // Also check by user for the specific document (covers new/different devices)
+            if (!$documentActivated && $userId) {
+                $documentActivated = RedeemCode::where('user_id', $userId)
+                    ->where('is_used', true)
+                    ->where('document_id', $request->document_id)
+                    ->where(function ($q) use ($now) {
+                        $q->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', $now);
+                    })
+                    ->exists();
+            }
         }
 
+        $fullAccess = $deviceActivated || $userFullAccess;
+
         return response()->json([
-            'activated' => $deviceActivated || $documentActivated,
-            'full_access' => $deviceActivated,
+            'activated' => $fullAccess || $documentActivated,
+            'full_access' => $fullAccess,
             'document_access' => $documentActivated
         ]);
     }
