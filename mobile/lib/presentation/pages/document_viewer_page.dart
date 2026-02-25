@@ -169,7 +169,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                   scaleStateController: _scaleStateController,
                   initialScale: PhotoViewComputedScale.contained,
                   minScale: PhotoViewComputedScale.contained * 0.8,
-                  maxScale: PhotoViewComputedScale.covered * 2,
+                  maxScale: PhotoViewComputedScale.contained * 10,
                   heroAttributes: PhotoViewHeroAttributes(tag: "page_$pageNum"),
                   errorBuilder: (context, error, stackTrace) => Center(
                     child: Column(

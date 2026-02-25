@@ -115,8 +115,9 @@ class DocumentController extends Controller
             Log::info("Generating page $page for doc {$document->id} using Ghostscript");
 
             // Using Ghostscript as pdftoppm may not be available. We use -dNOSAFER as it was required for countPdfPages.
+            // Using 300 DPI for high resolution output so newspapers zoom clearly
             $command = sprintf(
-                "/usr/bin/gs -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r150 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
+                "/usr/bin/gs -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r300 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
                 $page,
                 $page,
                 escapeshellarg($outputPath),
