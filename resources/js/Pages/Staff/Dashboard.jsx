@@ -199,7 +199,7 @@ export default function Dashboard({ auth, documents }) {
                                                             as="button"
                                                             className="inline-flex items-center px-6 py-3 bg-white border border-[#be1e2d]/10 text-[#be1e2d] text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[#be1e2d] hover:text-white transition-all shadow-sm"
                                                         >
-                                                            Expunge
+                                                            Delete
                                                         </Link>
                                                     )}
                                                 </td>
