@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Te Uekera — App Showcase</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;600;700;900&family=Source+Serif+4:ital,wght@0,400;1,400;1,600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --red: #be1e2d;
+            --cream: #f4f1ea;
+            --ink: #1a1a1a;
+            --navy: #1e3a8a;
+            --gold: #ffde00;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--ink);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* ── ANIMATED GRADIENT BG ── */
+        .hero-bg {
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a0005 40%, #0a1540 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 70% 40%, rgba(190, 30, 45, 0.18) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 50% at 20% 80%, rgba(30, 58, 138, 0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* ── TICKER ── */
+        .ticker-wrap {
+            background: var(--red);
+            padding: 8px 0;
+            overflow: hidden;
+        }
+
+        .ticker {
+            display: flex;
+            gap: 80px;
+            animation: ticker 30s linear infinite;
+            white-space: nowrap;
+        }
+
+        .ticker span {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            opacity: .9;
+        }
+
+        .ticker span::before {
+            content: '◆  ';
+        }
+
+        @keyframes ticker {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* ── NAV ── */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            position: relative;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .nav-logo-mark {
+            width: 44px;
+            height: 44px;
+            background: var(--red);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 18px;
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(190, 30, 45, .4);
+        }
+
+        .nav-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 22px;
+            letter-spacing: -.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, .6);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            transition: color .2s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .badge-live {
+            background: rgba(190, 30, 45, .2);
+            border: 1px solid var(--red);
+            color: var(--red);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .1em;
+            padding: 4px 12px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-live::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--red);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: .4;
+                transform: scale(1.4);
+            }
+        }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 80px 40px 100px;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+
+        @media(max-width:900px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(190, 30, 45, .15);
+            border: 1px solid rgba(190, 30, 45, .3);
+            color: #ff6b7a;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 50px;
+            margin-bottom: 28px;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: clamp(44px, 6vw, 80px);
+            line-height: .95;
+            margin-bottom: 28px;
+            letter-spacing: -2px;
+        }
+
+        .hero h1 em {
+            font-style: italic;
+            color: var(--red);
+        }
+
+        .hero-sub {
+            font-family: 'Source Serif 4', serif;
+            font-style: italic;
+            font-size: 18px;
+            line-height: 1.65;
+            color: rgba(255, 255, 255, .65);
+            border-left: 3px solid var(--red);
+            padding-left: 20px;
+            margin-bottom: 48px;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            padding: 14px 32px;
+            background: var(--red);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 12px 32px rgba(190, 30, 45, .4);
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(190, 30, 45, .5);
+        }
+
+        .btn-outline {
+            padding: 14px 32px;
+            background: transparent;
+            color: rgba(255, 255, 255, .8);
+            border: 1px solid rgba(255, 255, 255, .2);
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+            transition: border-color .2s, color .2s;
+        }
+
+        .btn-outline:hover {
+            border-color: rgba(255, 255, 255, .5);
+            color: #fff;
+        }
+
+        /* ── NEWSPAPER MOCKUP SVG ── */
+        .mockup-wrap {
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .mockup-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(190, 30, 45, .35) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: glow-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes glow-pulse {
+
+            0%,
+            100% {
+                opacity: .7;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+
+        .newspaper-card {
+            background: var(--cream);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 255, 255, .06);
+            width: 100%;
+            max-width: 380px;
+            position: relative;
+            z-index: 2;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        .np-header {
+            background: var(--red);
+            border-radius: 10px 10px 0 0;
+            padding: 14px 20px;
+            margin: -20px -20px 0;
+        }
+
+        .np-ticker {
+            background: #fff;
+            font-size: 9px;
+            font-weight: 900;
+            padding: 4px 10px;
+            color: #333;
+            letter-spacing: .05em;
+        }
+
+        .np-masthead {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 34px;
+            color: #fff;
+            letter-spacing: -1px;
+            line-height: 1;
+            margin-top: 8px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .np-datebar {
+            background: rgba(0, 0, 0, .25);
+            font-size: 8px;
+            color: rgba(255, 255, 255, .8);
+            padding: 3px 0;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-weight: 700;
+            font-style: italic;
+        }
+
+        .np-body {
+            padding: 16px 0 0;
+        }
+
+        .np-headline {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 15px;
+            color: var(--ink);
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+
+        .np-img {
+            height: 90px;
+            background: linear-gradient(135deg, #ddd 0%, #bbb 100%);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .np-img svg {
+            width: 40px;
+            height: 40px;
+            opacity: .3;
+        }
+
+        .np-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .np-col {
+            background: #eee;
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .np-col-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 9px;
+            font-weight: 900;
+            color: var(--red);
+            margin-bottom: 4px;
+        }
+
+        .np-lines {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .np-line {
+            height: 5px;
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .np-line.short {
+            width: 70%;
+        }
+
+        .np-tag {
+            position: absolute;
+            top: -14px;
+            right: 20px;
+            background: var(--gold);
+            color: var(--ink);
+            font-size: 10px;
+            font-weight: 900;
+            padding: 4px 12px;
+            border-radius: 50px;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+
+        /* ── STATS ── */
+        .stats {
+            background: rgba(255, 255, 255, .03);
+            border-top: 1px solid rgba(255, 255, 255, .06);
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+        }
+
+        .stats-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 48px 40px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 32px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-num {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 52px;
+            color: var(--red);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, .4);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .15em;
+            margin-top: 6px;
+        }
+
+        /* ── SECTION SHARED ── */
+        section {
+            padding: 100px 40px;
+        }
+
+        .section-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .section-eyebrow {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .25em;
+            text-transform: uppercase;
+            color: var(--red);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-eyebrow::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 2px;
+            background: var(--red);
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: clamp(32px, 4vw, 52px);
+            line-height: 1.05;
+            margin-bottom: 16px;
+        }
+
+        .section-sub {
+            font-size: 17px;
+            color: rgba(255, 255, 255, .5);
+            line-height: 1.6;
+            max-width: 600px;
+            margin-bottom: 60px;
+            font-family: 'Source Serif 4', serif;
+            font-style: italic;
+        }
+
+        /* ── TECH STACK ── */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .tech-card {
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 20px;
+            padding: 28px;
+            transition: border-color .3s, transform .3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tech-card:hover {
+            border-color: rgba(190, 30, 45, .4);
+            transform: translateY(-4px);
+        }
+
+        .tech-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red), transparent);
+            opacity: 0;
+            transition: opacity .3s;
+        }
+
+        .tech-card:hover::before {
+            opacity: 1;
+        }
+
+        .tech-icon {
+            font-size: 28px;
+            margin-bottom: 14px;
+        }
+
+        .tech-name {
+            font-weight: 900;
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+
+        .tech-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, .5);
+            line-height: 1.55;
+        }
+
+        /* ── FEATURES ── */
+        #features {
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media(max-width:700px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all .3s;
+            display: flex;
+            gap: 20px;
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, .07);
+            transform: translateY(-2px);
+        }
+
+        .feature-card.accent {
+            background: rgba(190, 30, 45, .08);
+            border-color: rgba(190, 30, 45, .2);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            border-radius: 14px;
+            background: rgba(190, 30, 45, .15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .feature-card.accent .feature-icon {
+            background: rgba(190, 30, 45, .3);
+        }
+
+        .feature-body {}
+
+        .feature-title {
+            font-weight: 900;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, .5);
+            line-height: 1.6;
+        }
+
+        .feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .feature-tag {
+            background: rgba(255, 255, 255, .07);
+            color: rgba(255, 255, 255, .5);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 50px;
+            letter-spacing: .05em;
+        }
+
+        /* ── API ROUTES ── */
+        #api {
+            background: #0d0d0d;
+        }
+
+        .route-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .route-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 14px;
+            padding: 18px 22px;
+            transition: border-color .2s;
+        }
+
+        .route-item:hover {
+            border-color: rgba(190, 30, 45, .3);
+        }
+
+        .method {
+            flex-shrink: 0;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: .05em;
+            padding: 3px 10px;
+            border-radius: 6px;
+            min-width: 56px;
+            text-align: center;
+            margin-top: 1px;
+        }
+
+        .method.get {
+            background: rgba(34, 197, 94, .15);
+            color: #4ade80;
+        }
+
+        .method.post {
+            background: rgba(59, 130, 246, .15);
+            color: #60a5fa;
+        }
+
+        .method.delete {
+            background: rgba(239, 68, 68, .15);
+            color: #f87171;
+        }
+
+        .method.patch {
+            background: rgba(245, 158, 11, .15);
+            color: #fbbf24;
+        }
+
+        .route-path {
+            font-family: monospace;
+            font-size: 14px;
+            color: rgba(255, 255, 255, .85);
+            margin-bottom: 3px;
+        }
+
+        .route-desc {
+            font-size: 12px;
+            color: rgba(255, 255, 255, .4);
+        }
+
+        .route-lock {
+            margin-left: auto;
+            font-size: 18px;
+        }
+
+        /* ── MOBILE SECTION ── */
+        #mobile {
+            background: linear-gradient(180deg, rgba(30, 58, 138, .05) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .mobile-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        @media(max-width:800px) {
+            .mobile-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .phone-frame {
+            width: 260px;
+            margin: 0 auto;
+            background: #111;
+            border-radius: 48px;
+            padding: 14px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .08);
+            animation: float 5s ease-in-out 1s infinite;
+        }
+
+        .phone-notch {
+            width: 90px;
+            height: 26px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            margin: 0 auto 10px;
+        }
+
+        .phone-screen {
+            background: var(--cream);
+            border-radius: 38px;
+            overflow: hidden;
+        }
+
+        .ps-topbar {
+            height: 8px;
+            background: var(--ink);
+            border-top: 3px solid #fff;
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 10px;
+            align-items: center;
+        }
+
+        .ps-header {
+            background: var(--red);
+            padding: 12px 14px;
+        }
+
+        .ps-header-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 22px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .ps-issuebar {
+            background: rgba(0, 0, 0, .25);
+            padding: 3px 14px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            color: rgba(255, 255, 255, .8);
+            font-weight: 700;
+        }
+
+        .ps-body {
+            padding: 12px;
+            background: var(--cream);
+        }
+
+        .ps-pill {
+            display: inline-block;
+            background: var(--red);
+            color: #fff;
+            font-size: 8px;
+            font-weight: 900;
+            padding: 3px 10px;
+            border-radius: 50px;
+            margin-bottom: 8px;
+        }
+
+        .ps-headline {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 12px;
+            color: var(--ink);
+            line-height: 1.1;
+            margin-bottom: 6px;
+        }
+
+        .ps-quote {
+            border-left: 3px solid var(--red);
+            padding-left: 8px;
+            font-size: 8px;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .ps-btn {
+            background: var(--red);
+            color: #fff;
+            font-size: 8px;
+            font-weight: 900;
+            padding: 7px;
+            text-align: center;
+            border-radius: 8px;
+            letter-spacing: .05em;
+            margin-bottom: 10px;
+        }
+
+        .ps-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 4px;
+        }
+
+        .ps-card {
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .ps-card-t {
+            font-size: 7px;
+            font-weight: 900;
+            margin-bottom: 3px;
+        }
+
+        .ps-card-b {
+            font-size: 6px;
+            font-style: italic;
+            line-height: 1.3;
+        }
+
+        .ps-card.c1 {
+            background: #fff;
+        }
+
+        .ps-card.c2 {
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .ps-card.c3 {
+            background: var(--gold);
+        }
+
+        .ps-card.c1 .ps-card-t {
+            color: var(--red);
+        }
+
+        .ps-card.c2 .ps-card-t {
+            color: var(--gold);
+        }
+
+        .ps-card.c3 .ps-card-t {
+            color: var(--navy);
+        }
+
+        .ps-navbar {
+            background: #fff;
+            border-top: 1px solid #eee;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .ps-nav-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .ps-nav-icon.active {
+            background: var(--red);
+        }
+
+        /* ── ROLES ── */
+        #roles {}
+
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media(max-width:700px) {
+            .roles-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .role-card {
+            border-radius: 24px;
+            padding: 36px 28px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .3s;
+        }
+
+        .role-card:hover {
+            transform: translateY(-6px);
+        }
+
+        .role-card.admin {
+            background: linear-gradient(135deg, rgba(190, 30, 45, .18) 0%, rgba(190, 30, 45, .06) 100%);
+            border: 1px solid rgba(190, 30, 45, .3);
+        }
+
+        .role-card.staff {
+            background: linear-gradient(135deg, rgba(30, 58, 138, .18) 0%, rgba(30, 58, 138, .06) 100%);
+            border: 1px solid rgba(30, 58, 138, .3);
+        }
+
+        .role-card.client {
+            background: linear-gradient(135deg, rgba(255, 222, 0, .1) 0%, rgba(255, 222, 0, .03) 100%);
+            border: 1px solid rgba(255, 222, 0, .2);
+        }
+
+        .role-emoji {
+            font-size: 42px;
+            margin-bottom: 18px;
+        }
+
+        .role-name {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 26px;
+            margin-bottom: 12px;
+        }
+
+        .role-perms {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .role-perms li {
+            font-size: 12px;
+            color: rgba(255, 255, 255, .6);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .role-perms li::before {
+            content: '✓';
+            color: var(--red);
+            font-weight: 900;
+        }
+
+        .role-card.staff .role-perms li::before {
+            color: #60a5fa;
+        }
+
+        .role-card.client .role-perms li::before {
+            color: var(--gold);
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, .07);
+            padding: 48px 40px;
+            text-align: center;
+            background: #080808;
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 32px;
+            color: var(--red);
+            margin-bottom: 12px;
+        }
+
+        .footer-sub {
+            font-size: 12px;
+            color: rgba(255, 255, 255, .3);
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+
+        .footer-tags {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .footer-tag {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .08);
+            color: rgba(255, 255, 255, .4);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 50px;
+        }
+
+        .footer-copy {
+            margin-top: 40px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .2);
+        }
+
+        /* ── PAGE SECTIONS NAV ── */
+        .pill-nav {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 0 40px 60px;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .1);
+            color: rgba(255, 255, 255, .6);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 22px;
+            border-radius: 50px;
+            transition: all .2s;
+        }
+
+        .pill:hover {
+            background: var(--red);
+            border-color: var(--red);
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TICKER -->
+    <div class="ticker-wrap">
+        <div class="ticker">
+            <span>Laravel 12 Backend</span>
+            <span>Flutter Mobile App</span>
+            <span>React / InertiaJS Frontend</span>
+            <span>Stripe & PayPal Payments</span>
+            <span>Redeem Code System</span>
+            <span>Role-Based Access Control</span>
+            <span>Laravel Sanctum Auth</span>
+            <span>Document Reader & Viewer</span>
+            <span>Laravel 12 Backend</span>
+            <span>Flutter Mobile App</span>
+            <span>React / InertiaJS Frontend</span>
+            <span>Stripe & PayPal Payments</span>
+            <span>Redeem Code System</span>
+            <span>Role-Based Access Control</span>
+            <span>Laravel Sanctum Auth</span>
+            <span>Document Reader & Viewer</span>
+        </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero-bg">
+        <nav>
+            <div class="nav-logo">
+                <div class="nav-logo-mark">T</div>
+                <div class="nav-title">Te Uekera</div>
+            </div>
+            <div class="nav-links">
+                <a href="#tech">Stack</a>
+                <a href="#features">Features</a>
+                <a href="#api">API</a>
+                <a href="#mobile">Mobile</a>
+                <a href="#roles">Roles</a>
+            </div>
+            <div class="badge-live">Live App</div>
+        </nav>
+
+        <div class="hero">
+            <div class="hero-left">
+                <div class="hero-eyebrow">📰 Full-Stack Showcase</div>
+                <h1>Te Uekera<br /><em>Digital Newspaper</em><br />Platform</h1>
+                <p class="hero-sub">
+                    A full-stack digital newspaper platform built with Laravel 12, React/InertiaJS, and Flutter —
+                    serving the I-Kiribati community with secure, pay-per-view news access.
+                </p>
+                <div class="hero-ctas">
+                    <a href="#features" class="btn-primary">Explore Features</a>
+                    <a href="#api" class="btn-outline">View API</a>
+                </div>
+            </div>
+
+            <div class="mockup-wrap">
+                <div class="mockup-glow"></div>
+                <div class="newspaper-card">
+                    <div class="np-tag">✨ Latest Edition</div>
+                    <div class="np-header">
+                        <div class="np-ticker">Ana Nuutibeeba ni koaua te I-Kiribati &nbsp;·&nbsp; Reitaki nakon
+                            63030150</div>
+                        <div class="np-masthead">Te Uekera</div>
+                        <div class="np-datebar"><span>Issue #186</span><span>2026</span><span>$1.00</span></div>
+                    </div>
+                    <div class="np-body">
+                        <div class="np-headline">THE FUTURE OF NEWS,<br />DIGITALLY SECURED WORLD</div>
+                        <div class="np-img">
+                            <svg viewBox="0 0 60 60" fill="none">
+                                <rect x="5" y="5" width="50" height="50" rx="4" stroke="#999" stroke-width="2" />
+                                <path d="M15 35 L25 20 L35 30 L42 22 L52 35" stroke="#999" stroke-width="2"
+                                    stroke-linecap="round" />
+                                <circle cx="20" cy="20" r="5" stroke="#999" stroke-width="2" />
+                            </svg>
+                        </div>
+                        <div class="np-grid">
+                            <div class="np-col">
+                                <div class="np-col-title">Local News</div>
+                                <div class="np-lines">
+                                    <div class="np-line"></div>
+                                    <div class="np-line short"></div>
+                                    <div class="np-line"></div>
+                                    <div class="np-line short"></div>
+                                </div>
+                            </div>
+                            <div class="np-col">
+                                <div class="np-col-title">Community</div>
+                                <div class="np-lines">
+                                    <div class="np-line short"></div>
+                                    <div class="np-line"></div>
+                                    <div class="np-line short"></div>
+                                    <div class="np-line"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PILL NAV -->
+        <div class="pill-nav">
+            <a href="#tech" class="pill">🛠 Tech Stack</a>
+            <a href="#features" class="pill">⚡ Features</a>
+            <a href="#api" class="pill">🔌 API Routes</a>
+            <a href="#mobile" class="pill">📱 Mobile App</a>
+            <a href="#roles" class="pill">👥 User Roles</a>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stats-inner">
+            <div class="stat-item">
+                <div class="stat-num">3</div>
+                <div class="stat-label">User Roles</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">8</div>
+                <div class="stat-label">DB Models</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">40+</div>
+                <div class="stat-label">API & Web Routes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">10</div>
+                <div class="stat-label">Mobile Pages</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">2</div>
+                <div class="stat-label">Payment Gateways</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TECH STACK -->
+    <section id="tech">
+        <div class="section-inner">
+            <div class="section-eyebrow">Technology Stack</div>
+            <h2 class="section-title">Built with Modern Tools</h2>
+            <p class="section-sub">A carefully chosen stack optimised for performance, security, and cross-platform
+                reach.</p>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <div class="tech-icon">🐘</div>
+                    <div class="tech-name">Laravel 12</div>
+                    <div class="tech-desc">PHP backend framework powering the REST API, admin web panel, authentication,
+                        and business logic.</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">⚛️</div>
+                    <div class="tech-name">React + InertiaJS</div>
+                    <div class="tech-desc">SPA-like admin frontend rendered server-side via Inertia. Tailwind CSS for
+                        styling. No separate API needed.</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">💙</div>
+                    <div class="tech-name">Flutter</div>
+                    <div class="tech-desc">Cross-platform mobile app (iOS & Android) with native performance, BLoC state
+                        management, and offline support.</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🔑</div>
+                    <div class="tech-name">Laravel Sanctum</div>
+                    <div class="tech-desc">Token-based API authentication for the mobile app. Secure, stateless, and
+                        easy to revoke.</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">💳</div>
+                    <div class="tech-name">Stripe & PayPal</div>
+                    <div class="tech-desc">Dual payment gateway support. Stripe Checkout for cards; PayPal for
+                        alternative payments. Both web & mobile.</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🗄️</div>
+                    <div class="tech-name">MySQL + Eloquent ORM</div>
+                    <div class="tech-desc">Relational database with 8 models: User, Document, Purchase, RedeemCode,
+                        Subscription, and more.</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🔒</div>
+                    <div class="tech-name">flutter_secure_storage</div>
+                    <div class="tech-desc">Encrypted secure storage on mobile for auth tokens and device ID — no
+                        plaintext credentials.</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🚀</div>
+                    <div class="tech-name">Cloudways Deployment</div>
+                    <div class="tech-desc">Production deployment on Cloudways with Ghostscript for PDF page rendering
+                        and image generation.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+        <div class="section-inner">
+            <div class="section-eyebrow">Features</div>
+            <h2 class="section-title">Everything You Need</h2>
+            <p class="section-sub">From document management to payments and secure reading — every feature is
+                production-ready.</p>
+            <div class="features-grid">
+                <div class="feature-card accent">
+                    <div class="feature-icon">📄</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Document Management</div>
+                        <div class="feature-desc">Upload PDF newspaper editions, auto-generate per-page images via
+                            Ghostscript, set prices, and publish or unpublish editions.</div>
+                        <div class="feature-tags"><span class="feature-tag">Staff</span><span
+                                class="feature-tag">Admin</span><span class="feature-tag">Ghostscript</span></div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💳</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Pay-Per-View Purchases</div>
+                        <div class="feature-desc">Users purchase individual newspaper editions. Supports Stripe
+                            Checkout, PayPal, and Redeem Codes as alternative payment methods.</div>
+                        <div class="feature-tags"><span class="feature-tag">Stripe</span><span
+                                class="feature-tag">PayPal</span><span class="feature-tag">Redeem Codes</span></div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎟️</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Redeem Code System</div>
+                        <div class="feature-desc">Staff generate secure redeem codes tied to a document and duration.
+                            Codes can only be used once per device+user pair. Full management UI.</div>
+                        <div class="feature-tags"><span class="feature-tag">One-time use</span><span
+                                class="feature-tag">Device-locked</span><span class="feature-tag">Expiry</span></div>
+                    </div>
+                </div>
+                <div class="feature-card accent">
+                    <div class="feature-icon">📖</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Secure Document Reader</div>
+                        <div class="feature-desc">Page-by-page reader served as images — no raw PDF exposed. Access
+                            middleware verifies ownership before any page is served. Screenshot protection on mobile.
+                        </div>
+                        <div class="feature-tags"><span class="feature-tag">Middleware</span><span
+                                class="feature-tag">No PDF leak</span><span class="feature-tag">Anti-screenshot</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Role-Based Access Control</div>
+                        <div class="feature-desc">Three roles: Admin, Staff, and Client. Staff have granular permissions
+                            (upload, vouchers, manage users). Role middleware enforces access on every route.</div>
+                        <div class="feature-tags"><span class="feature-tag">Admin</span><span
+                                class="feature-tag">Staff</span><span class="feature-tag">Client</span></div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Flutter Mobile App</div>
+                        <div class="feature-desc">Full-featured Flutter app with BLoC, DI pattern, offline-capable
+                            document library, Stripe web checkout, and a beautiful editorial UI matching the web.</div>
+                        <div class="feature-tags"><span class="feature-tag">BLoC</span><span
+                                class="feature-tag">iOS</span><span class="feature-tag">Android</span></div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Human Verification</div>
+                        <div class="feature-desc">Custom Kiribati-language CAPTCHA on registration — users must answer
+                            an animal-translation challenge. Bot trap honeypot field included.</div>
+                        <div class="feature-tags"><span class="feature-tag">Bot trap</span><span
+                                class="feature-tag">I-Kiribati</span></div>
+                    </div>
+                </div>
+                <div class="feature-card accent">
+                    <div class="feature-icon">♾️</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Subscription Plans</div>
+                        <div class="feature-desc">Recurring subscription model with Admin-managed plans. Active
+                            subscription grants access to all documents. Stripe and PayPal backed.</div>
+                        <div class="feature-tags"><span class="feature-tag">Recurring</span><span
+                                class="feature-tag">Admin-managed</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API ROUTES -->
+    <section id="api">
+        <div class="section-inner">
+            <div class="section-eyebrow">REST API</div>
+            <h2 class="section-title">Clean API for Mobile</h2>
+            <p class="section-sub">Sanctum-protected endpoints consumed by the Flutter app. Public routes for document
+                browsing, locked routes for payments and redemption.</p>
+            <div class="route-list">
+                <div class="route-item">
+                    <div class="method post">POST</div>
+                    <div>
+                        <div class="route-path">/api/login</div>
+                        <div class="route-desc">Authenticate user, return Sanctum token</div>
+                    </div>
+                </div>
+                <div class="route-item">
+                    <div class="method post">POST</div>
+                    <div>
+                        <div class="route-path">/api/logout</div>
+                        <div class="route-desc">Revoke current auth token</div>
+                    </div>
+                    <div class="route-lock">🔒</div>
+                </div>
+                <div class="route-item">
+                    <div class="method get">GET</div>
+                    <div>
+                        <div class="route-path">/api/user</div>
+                        <div class="route-desc">Return authenticated user object</div>
+                    </div>
+                    <div class="route-lock">🔒</div>
+                </div>
+                <div class="route-item">
+                    <div class="method get">GET</div>
+                    <div>
+                        <div class="route-path">/api/documents</div>
+                        <div class="route-desc">List all published documents (public)</div>
+                    </div>
+                </div>
+                <div class="route-item">
+                    <div class="method get">GET</div>
+                    <div>
+                        <div class="route-path">/api/documents/{id}/pages/{page}</div>
+                        <div class="route-desc">Serve a specific page image for a document</div>
+                    </div>
+                </div>
+                <div class="route-item">
+                    <div class="method get">GET</div>
+                    <div>
+                        <div class="route-path">/api/images/{path}</div>
+                        <div class="route-desc">Serve stored images (thumbnails, covers) — traversal-safe</div>
+                    </div>
+                </div>
+                <div class="route-item">
+                    <div class="method post">POST</div>
+                    <div>
+                        <div class="route-path">/api/payments/stripe/checkout</div>
+                        <div class="route-desc">Create Stripe Checkout session for a document purchase</div>
+                    </div>
+                    <div class="route-lock">🔒</div>
+                </div>
+                <div class="route-item">
+                    <div class="method get">GET</div>
+                    <div>
+                        <div class="route-path">/api/payments/stripe/success</div>
+                        <div class="route-desc">Handle successful Stripe payment callback</div>
+                    </div>
+                </div>
+                <div class="route-item">
+                    <div class="method post">POST</div>
+                    <div>
+                        <div class="route-path">/api/redeem-code</div>
+                        <div class="route-desc">Redeem a voucher code (authenticated user required)</div>
+                    </div>
+                    <div class="route-lock">🔒</div>
+                </div>
+                <div class="route-item">
+                    <div class="method post">POST</div>
+                    <div>
+                        <div class="route-path">/api/check-status</div>
+                        <div class="route-desc">Check if a redeem code is already used or valid (public read)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MOBILE -->
+    <section id="mobile">
+        <div class="section-inner">
+            <div class="section-eyebrow">Mobile App</div>
+            <h2 class="section-title">Flutter — Built to Impress</h2>
+            <div class="mobile-layout">
+                <div>
+                    <p class="section-sub" style="margin-bottom:32px;">The Flutter mobile app mirrors the premium
+                        editorial aesthetic of the web platform. Ten dedicated pages, BLoC state management, and clean
+                        repository architecture.</p>
+                    <div class="features-grid" style="grid-template-columns:1fr;gap:14px;">
+                        <div class="feature-card" style="padding:20px 24px;">
+                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">🏠
+                            </div>
+                            <div class="feature-body">
+                                <div class="feature-title" style="font-size:14px;">Home Page</div>
+                                <div class="feature-desc" style="font-size:12px;">Editorial landing with masthead, issue
+                                    bar, hero headline, and feature cards.</div>
+                            </div>
+                        </div>
+                        <div class="feature-card" style="padding:20px 24px;">
+                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">📰
+                            </div>
+                            <div class="feature-body">
+                                <div class="feature-title" style="font-size:14px;">Document List</div>
+                                <div class="feature-desc" style="font-size:12px;">Browsable, sortable, searchable
+                                    grid/list of all newspaper editions.</div>
+                            </div>
+                        </div>
+                        <div class="feature-card" style="padding:20px 24px;">
+                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">🔍
+                            </div>
+                            <div class="feature-body">
+                                <div class="feature-title" style="font-size:14px;">Document Details & Purchase</div>
+                                <div class="feature-desc" style="font-size:12px;">Full detail view with buy, redeem, and
+                                    read actions. Auth-gated purchasing flow.</div>
+                            </div>
+                        </div>
+                        <div class="feature-card" style="padding:20px 24px;">
+                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">📚
+                            </div>
+                            <div class="feature-body">
+                                <div class="feature-title" style="font-size:14px;">Library & Document Viewer</div>
+                                <div class="feature-desc" style="font-size:12px;">All purchased editions in a responsive
+                                    library. Page-by-page secure reader with no PDF exposure.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen">
+                            <div class="ps-header">
+                                <div class="ps-header-title">TE UEKERA</div>
+                                <div class="ps-issuebar"><span>Issue #1</span><span>2026</span><span>$1.00</span></div>
+                            </div>
+                            <div class="ps-body">
+                                <span class="ps-pill">HEADLINE NEWS</span>
+                                <div class="ps-headline">THE FUTURE OF NEWS,<br />DIGITALLY SECURED WORLD</div>
+                                <div class="ps-quote">Access the latest editions from anywhere in the world.</div>
+                                <div class="ps-btn">BROWSE EDITIONS</div>
+                                <div class="ps-cards">
+                                    <div class="ps-card c1">
+                                        <div class="ps-card-t">Pay Per View</div>
+                                        <div class="ps-card-b">Only pay for what you read.</div>
+                                    </div>
+                                    <div class="ps-card c2">
+                                        <div class="ps-card-t">Secure Access</div>
+                                        <div class="ps-card-b">Documents stay protected.</div>
+                                    </div>
+                                    <div class="ps-card c3">
+                                        <div class="ps-card-t">Mobile App</div>
+                                        <div class="ps-card-b">Read offline, anywhere.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ps-navbar">
+                                <div class="ps-nav-icon">🏠</div>
+                                <div class="ps-nav-icon active">📰</div>
+                                <div class="ps-nav-icon">📚</div>
+                                <div class="ps-nav-icon">👤</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ROLES -->
+    <section id="roles" style="background:rgba(255,255,255,.02);">
+        <div class="section-inner">
+            <div class="section-eyebrow">User Roles</div>
+            <h2 class="section-title">Role-Based Access Control</h2>
+            <p class="section-sub">Three distinct roles, each with carefully scoped permissions enforced by middleware
+                on every route.</p>
+            <div class="roles-grid">
+                <div class="role-card admin">
+                    <div class="role-emoji">👑</div>
+                    <div class="role-name">Admin</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Full system control</div>
+                    <ul class="role-perms">
+                        <li>Manage staff accounts & permissions</li>
+                        <li>Create & configure gateway settings</li>
+                        <li>Manage subscription plans</li>
+                        <li>Access all staff features</li>
+                        <li>Admin dashboard overview</li>
+                    </ul>
+                </div>
+                <div class="role-card staff">
+                    <div class="role-emoji">🗞️</div>
+                    <div class="role-name">Staff</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Content & code management
+                    </div>
+                    <ul class="role-perms">
+                        <li>Upload & publish documents (if permitted)</li>
+                        <li>Generate payment & redeem codes</li>
+                        <li>View & reset user passwords</li>
+                        <li>Manage redeem codes</li>
+                        <li>Staff dashboard</li>
+                    </ul>
+                </div>
+                <div class="role-card client">
+                    <div class="role-emoji">📖</div>
+                    <div class="role-name">Client</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Reader & subscriber</div>
+                    <ul class="role-perms">
+                        <li>Browse all published editions</li>
+                        <li>Purchase documents (Stripe / PayPal)</li>
+                        <li>Redeem voucher codes</li>
+                        <li>Read purchased documents</li>
+                        <li>Manage profile & library</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-logo">Te Uekera</div>
+        <div class="footer-sub">Ana Nuutibeeba ni koaua te I-Kiribati</div>
+        <div class="footer-tags">
+            <span class="footer-tag">Laravel 12</span>
+            <span class="footer-tag">React + InertiaJS</span>
+            <span class="footer-tag">Flutter</span>
+            <span class="footer-tag">Sanctum</span>
+            <span class="footer-tag">Stripe</span>
+            <span class="footer-tag">PayPal</span>
+            <span class="footer-tag">MySQL</span>
+            <span class="footer-tag">Ghostscript</span>
+            <span class="footer-tag">BLoC</span>
+            <span class="footer-tag">Cloudways</span>
+        </div>
+        <div class="footer-copy">© 2026 Te Uekera Digital — Showcase Page</div>
+    </footer>
+
+</body>
+
+</html>
