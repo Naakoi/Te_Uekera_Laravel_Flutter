@@ -19,12 +19,20 @@ class MainScaffold extends StatefulWidget {
 class _MainScaffoldState extends State<MainScaffold> {
   int _selectedIndex = 1; // Start on 'Shop' (Document List)
 
-  late final List<Widget> _pages = [
-    HomePage(onShopNow: () => _onItemTapped(1)),
-    const DocumentListPage(),
-    const LibraryPage(),
-    const ProfilePage(),
-  ];
+  List<Widget> _pages = [];
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomePage(onShopNow: () => _onItemTapped(1)),
+      const DocumentListPage(),
+      const LibraryPage(),
+      const ProfilePage(),
+    ];
+    _isInitialized = true;
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -41,7 +49,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         context.read<DocumentBloc>().add(FetchDocuments());
       },
       child: Scaffold(
-        body: IndexedStack(index: _selectedIndex, children: _pages),
+        body: !_isInitialized
+            ? const Center(child: CircularProgressIndicator())
+            : IndexedStack(index: _selectedIndex, children: _pages),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             color: Colors.white,

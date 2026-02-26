@@ -152,8 +152,8 @@ export default function Login({ status, canResetPassword }) {
                         <button
                             type="submit"
                             className={`w-full py-4 font-black rounded-xl transition-all shadow-lg uppercase tracking-widest text-xs disabled:opacity-50 active:scale-95 transform duration-200 ${errors.requires_logout_others
-                                    ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-500/20'
-                                    : 'bg-1a1a1a text-white hover:bg-[#be1e2d] hover:shadow-red-500/20'
+                                ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-500/20'
+                                : 'bg-[#1a1a1a] text-white hover:bg-[#be1e2d] hover:shadow-red-500/20'
                                 }`}
                             disabled={processing}
                         >

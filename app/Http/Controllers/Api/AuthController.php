@@ -65,10 +65,16 @@ class AuthController extends Controller
     public function logoutOthers(Request $request)
     {
         $user = $request->user();
-        $currentTokenId = $user->currentAccessToken()->id;
+        $token = $user->currentAccessToken();
 
-        // Delete all tokens except the current one
-        $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+        // Delete other sessions
+        if ($token instanceof \Laravel\Sanctum\TransientToken) {
+            // If authenticated via Session (Web), delete all tokens
+            $user->tokens()->delete();
+        } else {
+            // Delete all tokens except the current one if authenticated via Token
+            $user->tokens()->where('id', '!=', $token->id)->delete();
+        }
 
         // Delete all web sessions for this user
         \DB::table('sessions')->where('user_id', $user->id)->delete();
