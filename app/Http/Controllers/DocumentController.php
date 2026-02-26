@@ -139,34 +139,25 @@ class DocumentController extends Controller
             \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
             $pdfPath = storage_path('app/' . $document->file_path);
 
-            Log::info("Generating requested page $page for doc {$document->id} on-demand");
+            Log::info("Generating page $page for doc {$document->id} via Imagick");
 
-            if (!function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
-                Log::error("exec() is disabled on this server. Cannot generate page images.");
-                abort(503, 'Page image generation is not available on this server. Please contact support.');
-            }
-
-            // Generate just this SINGLE page synchronously so the user doesn't get a 404
-            $command = sprintf(
-                "/usr/bin/gs -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r300 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
-                $page,
-                $page,
-                escapeshellarg($fullPath),
-                escapeshellarg($pdfPath)
-            );
-
-            $output = [];
-            $return_var = -1;
             try {
-                exec($command, $output, $return_var);
+                $imagick = new \Imagick();
+                $imagick->setResolution(300, 300);
+                // Read only the specific page (0-indexed)
+                $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                $imagick->setImageFormat('png');
+                $imagick->setImageCompressionQuality(95);
+                // Flatten to white background (PDFs may have transparent bg)
+                $imagick->setImageBackgroundColor('white');
+                $imagick->flattenImages();
+                $imagick->writeImage($fullPath);
+                $imagick->clear();
+                $imagick->destroy();
+                Log::info("Page $page generated successfully for doc {$document->id}");
             } catch (\Throwable $e) {
-                Log::error("exec() call failed: " . $e->getMessage());
-                abort(503, 'Page image generation is not available on this server.');
-            }
-
-            if ($return_var !== 0) {
-                Log::error("Ghostscript generation failed: " . implode("\n", (array) $output));
-                abort(500, 'Page image generation failed. Please try again.');
+                Log::error("Imagick page generation failed for doc {$document->id} page $page: " . $e->getMessage());
+                abort(500, 'Page image generation failed: ' . $e->getMessage());
             }
         }
 
@@ -304,7 +295,23 @@ class DocumentController extends Controller
                 return 0;
             }
 
-            // Only try exec/Ghostscript if exec() is actually available on this server
+            // 1. Use Imagick if available (most accurate, no exec needed)
+            if (extension_loaded('imagick')) {
+                try {
+                    $imagick = new \Imagick();
+                    $imagick->pingImage($path); // pingImage reads metadata only - very fast
+                    $count = $imagick->getNumberImages();
+                    $imagick->clear();
+                    $imagick->destroy();
+                    if ($count > 0) {
+                        return $count;
+                    }
+                } catch (\Throwable $imagickError) {
+                    Log::warning("Imagick page count failed: " . $imagickError->getMessage());
+                }
+            }
+
+            // 2. Try exec/Ghostscript if exec() is available
             $execDisabled = in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))));
             if (!$execDisabled && function_exists('exec')) {
                 try {
@@ -313,7 +320,6 @@ class DocumentController extends Controller
                     $output = [];
                     $return_var = -1;
                     exec($command, $output, $return_var);
-
                     if ($return_var === 0 && !empty($output)) {
                         $lastLine = trim(end($output));
                         if (is_numeric($lastLine) && (int) $lastLine > 0) {
@@ -325,30 +331,21 @@ class DocumentController extends Controller
                 }
             }
 
-            // Fallback: accurate pure-PHP PDF page counter
-            // Strategy: read the full PDF and find the /Count value in the Pages dictionary
+            // 3. Fallback: read PDF /Count attribute (pure PHP, no extensions)
             $content = @file_get_contents($path);
             if ($content === false)
                 return 1;
 
-            // Find /Type /Pages ... /Count N — the definitive page count in PDF spec
-            // The Pages dictionary has /Count indicating total page count
             if (preg_match_all('/\/Count\s+(\d+)/', $content, $matches)) {
                 $counts = array_map('intval', $matches[1]);
-                // The largest /Count value is the root Pages node (total pages)
                 $pageCount = max($counts);
-                if ($pageCount > 0) {
+                if ($pageCount > 0)
                     return $pageCount;
-                }
             }
 
-            // Last resort: count /Page entries
             $pageEntries = preg_match_all('/\/Type\s*\/Page[^s]/', $content, $m);
-            if ($pageEntries > 0) {
-                return $pageEntries;
-            }
+            return $pageEntries > 0 ? $pageEntries : 1;
 
-            return 1;
         } catch (\Throwable $e) {
             Log::warning("countPdfPages error for {$path}: " . $e->getMessage());
             return 1;
