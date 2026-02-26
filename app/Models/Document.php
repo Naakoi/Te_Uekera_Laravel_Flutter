@@ -16,6 +16,7 @@ class Document extends Model
         'thumbnail_path',
         'price',
         'published_at',
+        'page_count',
     ];
 
     protected $casts = [

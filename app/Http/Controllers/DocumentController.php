@@ -28,7 +28,11 @@ class DocumentController extends Controller
             $doc->has_access = $globalActivated || $this->hasAccess($doc);
             if (!$doc->page_count) {
                 $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
-                $doc->save();
+                try {
+                    $doc->save();
+                } catch (\Exception $e) {
+                    Log::warning("Could not persist page_count for doc {$doc->id}: " . $e->getMessage());
+                }
             }
             return $doc;
         });
@@ -47,7 +51,11 @@ class DocumentController extends Controller
             $doc->has_access = $this->hasAccess($doc);
             if (!$doc->page_count) {
                 $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
-                $doc->save();
+                try {
+                    $doc->save();
+                } catch (\Exception $e) {
+                    Log::warning("Could not persist page_count for doc {$doc->id}: " . $e->getMessage());
+                }
             }
             return $doc;
         });
@@ -251,7 +259,11 @@ class DocumentController extends Controller
         $documents = $documents->map(function ($doc) {
             if (!$doc->page_count) {
                 $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
-                $doc->save();
+                try {
+                    $doc->save();
+                } catch (\Exception $e) {
+                    Log::warning("Could not persist page_count for doc {$doc->id}: " . $e->getMessage());
+                }
             }
             return $doc;
         });
