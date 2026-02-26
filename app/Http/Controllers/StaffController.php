@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Jobs\GenerateDocumentPagesJob;
 use App\Models\Document;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -90,11 +91,9 @@ class StaffController extends Controller
             'published_at' => now(),
         ]);
 
-        // Dispatch background page generation via detached OS process so reader pages are ready
-        // We use this instead of Artisan::queue() to prevent blocking if QUEUE_CONNECTION is sync
-        $artisanPath = base_path('artisan');
-        $command = "php {$artisanPath} documents:generate-pages --document={$document->id} --force > /dev/null 2>&1 &";
-        @exec($command);
+        // Dispatch background page generation as a queue job
+        // The queue worker runs as PHP CLI (where exec() is available) so Ghostscript works
+        GenerateDocumentPagesJob::dispatch($document);
 
         return redirect()->back()->with('success', 'Document uploaded successfully. Page images are being generated in the background.');
     }
