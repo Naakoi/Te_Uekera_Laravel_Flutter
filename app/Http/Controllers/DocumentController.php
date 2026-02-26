@@ -145,17 +145,20 @@ class DocumentController extends Controller
 
     public function hasAccess(Document $document)
     {
-        // Try to get token from query param for Web compatibility
-        $token = request()->query('token');
-        if ($token) {
-            $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-            if ($accessToken && $accessToken->tokenable) {
-                auth('sanctum')->setUser($accessToken->tokenable);
+        // If already authenticated (via middleware), use that
+        $user = auth('sanctum')->user() ?? auth()->user();
+
+        // If not authenticated, try to manually identify from token (common on these public API routes)
+        if (!$user) {
+            $token = request()->query('token') ?? request()->bearerToken();
+            if ($token) {
+                $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                if ($accessToken && $accessToken->tokenable) {
+                    $user = $accessToken->tokenable;
+                    auth('sanctum')->setUser($user);
+                }
             }
         }
-
-        // Check for authenticated user (Sanctum)
-        $user = auth('sanctum')->user() ?? auth()->user();
 
         if ($user) {
             if ($user->isAdmin() || $user->isStaff()) {
@@ -198,10 +201,19 @@ class DocumentController extends Controller
 
     public function library()
     {
-        $user = auth()->user();
+        // Re-authenticate if possible
+        $token = request()->query('token') ?? request()->bearerToken();
+        if ($token) {
+            $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+            if ($accessToken && $accessToken->tokenable) {
+                auth('sanctum')->setUser($accessToken->tokenable);
+            }
+        }
+
+        $user = auth('sanctum')->user() ?? auth()->user();
         $purchasedIds = $user ? $user->purchases()->pluck('document_id')->toArray() : [];
 
-        $deviceId = request()->cookie('device_id') ?? request()->header('X-Device-Id');
+        $deviceId = request()->cookie('device_id') ?? request()->header('X-Device-Id') ?? request('device_id');
         $activatedIds = [];
         $fullAccess = false;
 
@@ -247,10 +259,28 @@ class DocumentController extends Controller
 
     private function countPdfPages($path)
     {
-        if (!file_exists($path))
+        if (!file_exists($path)) {
             return 0;
+        }
 
-        // Pure PHP implementation to avoid exec() restrictions
+        // 1. Try Ghostscript for 100% accuracy
+        $command = sprintf(
+            "/usr/bin/gs -q -dNODISPLAY -dNOSAFER -c \"(%s) (r) file runpdfbegin pdfpagecount = quit\" 2>&1",
+            str_replace(['(', ')'], ['\\(', '\\)'], $path)
+        );
+
+        $output = [];
+        $return_var = -1;
+        @exec($command, $output, $return_var);
+
+        if ($return_var === 0 && !empty($output)) {
+            $lastLine = trim(end($output));
+            if (is_numeric($lastLine)) {
+                return (int) $lastLine;
+            }
+        }
+
+        // 2. Fallback to PHP parsing if GS fails
         $fp = @fopen($path, "rb");
         if (!$fp)
             return 1;
@@ -264,8 +294,6 @@ class DocumentController extends Controller
         }
         fclose($fp);
 
-        // This regex find all instances of /Page. This is often double the actual page count 
-        // because of the way PDFs are structured. However, it's safer than crashing.
         return max(1, (int) ($count / 2));
     }
 }

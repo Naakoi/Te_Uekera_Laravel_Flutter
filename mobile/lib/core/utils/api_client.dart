@@ -21,10 +21,14 @@ class ApiClient {
           }
 
           // Add Device ID for guest access
-          final deviceId = await storage.read(key: 'device_id');
-          if (deviceId != null) {
-            options.headers['X-Device-Id'] = deviceId;
+          String? deviceId = await storage.read(key: 'device_id');
+          if (deviceId == null) {
+            // Generate a permanent device ID if we don't have one
+            deviceId =
+                "dev_${DateTime.now().millisecondsSinceEpoch}_${(options.path.hashCode % 1000)}";
+            await storage.write(key: 'device_id', value: deviceId);
           }
+          options.headers['X-Device-Id'] = deviceId;
 
           return handler.next(options);
         },
