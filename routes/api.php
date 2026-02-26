@@ -54,26 +54,3 @@ Route::get('/images/{path}', function ($path) {
     return response()->file($filePath);
 })->where('path', '.*');
 
-// Temporary one-time fix: chmod page directories to 777 so artisan (SSH user) can write to them
-Route::get('/admin/fix-page-dirs', function (\Illuminate\Http\Request $request) {
-    if ($request->query('secret') !== 'fix2026uekera') {
-        return response()->json(['error' => 'Forbidden'], 403);
-    }
-    $pagesBase = storage_path('app/pages');
-    $results = [];
-    if (is_dir($pagesBase)) {
-        foreach (scandir($pagesBase) as $dir) {
-            if ($dir === '.' || $dir === '..')
-                continue;
-            $fullDir = $pagesBase . '/' . $dir;
-            if (is_dir($fullDir)) {
-                $ok = chmod($fullDir, 0777);
-                $results[$dir] = $ok ? 'chmod 777 OK' : 'chmod FAILED';
-            }
-        }
-    }
-    // Also ensure base pages dir is writable
-    chmod($pagesBase, 0777);
-    return response()->json(['status' => 'done', 'dirs' => $results]);
-});
-
