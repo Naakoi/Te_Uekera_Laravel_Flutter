@@ -18,6 +18,111 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  void _showMultiDeviceDialog(
+    BuildContext context,
+    String email,
+    String password,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Force a choice
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFf4f1ea),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFbe1e2d), width: 2),
+        ),
+        title: Text(
+          'ALREADY SIGNED IN',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w900,
+            color: const Color(0xFFbe1e2d),
+            fontSize: 18,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.devices_other, size: 48, color: Color(0xFFbe1e2d)),
+            const SizedBox(height: 16),
+            Text(
+              'Your account is active on another device. Our security policy allows only one active session per account.',
+              style: GoogleFonts.sourceSerif4(
+                fontSize: 14,
+                color: Colors.grey[800],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Would you like to sign out from all other devices and log in on this device?',
+              style: GoogleFonts.sourceSerif4(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1a1a1a),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    context.read<AuthBloc>().add(AuthCheckRequested());
+                  },
+                  child: Text(
+                    'CANCEL',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    context.read<AuthBloc>().add(
+                      AuthLoginRequested(
+                        email: email,
+                        password: password,
+                        logoutOthers: true,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFbe1e2d),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(
+                    'SIGN OUT OTHERS',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,16 +145,17 @@ class _LoginPageState extends State<LoginPage> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            Navigator.of(
-              context,
-            ).pop(); // Return to previous screen (Profile/Home)
+            Navigator.of(context).pop(); // Return to previous screen
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('Login Successful')));
+          } else if (state is AuthMultiDeviceFailure) {
+            _showMultiDeviceDialog(context, state.email, state.password);
           } else if (state is AuthFailure) {
+            final cleanMessage = state.message.replaceFirst('Exception: ', '');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
+                content: Text(cleanMessage),
                 backgroundColor: Colors.red,
               ),
             );

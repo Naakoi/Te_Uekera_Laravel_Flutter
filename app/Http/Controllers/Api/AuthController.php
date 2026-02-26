@@ -16,6 +16,7 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'logout_others' => 'boolean'
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -24,6 +25,21 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'The provided credentials do not match our records.',
             ], 401);
+        }
+
+        // Check for active sessions on other devices
+        $hasOtherSessions = $user->tokens()->exists();
+
+        if ($hasOtherSessions && !$request->logout_others) {
+            return response()->json([
+                'message' => 'Your account is already logged in on another device. Do you want to sign out from all other devices before logging in here?',
+                'requires_logout_others' => true
+            ], 403); // Forbidden access due to multi-device policy
+        }
+
+        if ($request->logout_others) {
+            // Force logout from all other devices by deleting all tokens
+            $user->tokens()->delete();
         }
 
         $token = $user->createToken('mobile-app')->plainTextToken;

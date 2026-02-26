@@ -6,17 +6,22 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final FlutterSecureStorage storage;
 
-  AuthRepositoryImpl({
-    required this.remoteDataSource,
-    required this.storage,
-  });
+  AuthRepositoryImpl({required this.remoteDataSource, required this.storage});
 
   @override
-  Future<void> login(String email, String password) async {
-    final response = await remoteDataSource.login(email, password);
+  Future<void> login(
+    String email,
+    String password, {
+    bool logoutOthers = false,
+  }) async {
+    final response = await remoteDataSource.login(
+      email,
+      password,
+      logoutOthers: logoutOthers,
+    );
     final token = response['token'];
     // We could also cache the user here
-    
+
     await storage.write(key: 'auth_token', value: token);
   }
 

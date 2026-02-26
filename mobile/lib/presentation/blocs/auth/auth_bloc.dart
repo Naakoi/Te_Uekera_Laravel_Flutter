@@ -35,10 +35,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     try {
-      await authRepository.login(event.email, event.password);
+      await authRepository.login(
+        event.email,
+        event.password,
+        logoutOthers: event.logoutOthers,
+      );
       emit(AuthAuthenticated());
     } catch (e) {
-      emit(AuthFailure(e.toString()));
+      final message = e.toString().replaceFirst('Exception: ', '');
+      if (message == 'MULTI_DEVICE_LOGOUT_REQUIRED') {
+        emit(
+          AuthMultiDeviceFailure(
+            'Your account is already logged in on another device.',
+            email: event.email,
+            password: event.password,
+          ),
+        );
+      } else {
+        emit(AuthFailure(message));
+      }
     }
   }
 

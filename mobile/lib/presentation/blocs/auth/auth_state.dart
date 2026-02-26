@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 abstract class AuthState extends Equatable {
   const AuthState();
-  
+
   @override
   List<Object> get props => [];
 }
@@ -22,4 +22,18 @@ class AuthFailure extends AuthState {
 
   @override
   List<Object> get props => [message];
+}
+
+class AuthMultiDeviceFailure extends AuthFailure {
+  final String email;
+  final String password;
+
+  const AuthMultiDeviceFailure(
+    String message, {
+    required this.email,
+    required this.password,
+  }) : super(message);
+
+  @override
+  List<Object> get props => [message, email, password];
 }
