@@ -21,6 +21,7 @@ Route::get('/payments/stripe/success', [App\Http\Controllers\StripeController::c
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
+    Route::post('/logout-others', [App\Http\Controllers\Api\AuthController::class, 'logoutOthers']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });

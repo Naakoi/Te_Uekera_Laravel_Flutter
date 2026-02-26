@@ -36,6 +36,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> logoutOthers() async {
+    await remoteDataSource.logoutOthers();
+  }
+
+  @override
   Future<bool> isAuthenticated() async {
     final token = await storage.read(key: 'auth_token');
     return token != null;

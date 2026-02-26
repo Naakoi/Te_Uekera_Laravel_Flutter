@@ -10,6 +10,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
+    on<AuthLogoutOthersRequested>(_onAuthLogoutOthersRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -64,5 +65,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     await authRepository.logout();
     emit(AuthUnauthenticated());
+  }
+
+  Future<void> _onAuthLogoutOthersRequested(
+    AuthLogoutOthersRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await authRepository.logoutOthers();
+      // Since current session is still valid, we stay Authenticated
+      emit(AuthAuthenticated());
+    } catch (e) {
+      emit(AuthFailure(e.toString()));
+    }
   }
 }

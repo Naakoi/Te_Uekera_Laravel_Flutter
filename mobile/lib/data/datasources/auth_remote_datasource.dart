@@ -8,6 +8,7 @@ abstract class AuthRemoteDataSource {
     bool logoutOthers = false,
   });
   Future<void> logout();
+  Future<void> logoutOthers();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -48,5 +49,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     await apiClient.post('/logout');
+  }
+
+  @override
+  Future<void> logoutOthers() async {
+    await apiClient.post('/logout-others');
   }
 }
