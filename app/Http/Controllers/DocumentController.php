@@ -22,12 +22,9 @@ class DocumentController extends Controller
                 ->where('is_used', true)
                 ->whereNull('document_id');
 
-            // SECURITY: Scope to the logged-in user so a different user on the same
-            // device doesn't inherit the previous user's device activation.
-            $currentUser = auth()->user();
-            if ($currentUser) {
-                $globalQuery->where('user_id', $currentUser->id);
-            }
+            // SECURITY: Ensure global activation belongs to the current identity
+            // (user ID or null for guest). This prevents cross-user leakage.
+            $globalQuery->where('user_id', auth()->id());
 
             $globalActivated = $globalQuery->exists();
         }
@@ -201,12 +198,11 @@ class DocumentController extends Controller
                         ->orWhere('expires_at', '>', now());
                 });
 
-            // SECURITY: If a user is logged in, device activation must belong to them.
-            // This prevents User B from inheriting User A's redeem after a logout on
-            // the same physical device (the device_id persists in secure storage).
-            if ($user) {
-                $deviceQuery->where('user_id', $user->id);
-            }
+            // SECURITY: Device activation MUST belong to the current authentication state.
+            // (The logged-in user's ID, or null for guests).
+            // This prevents guests or a different user from inheriting redemptions
+            // left behind on a shared device.
+            $deviceQuery->where('user_id', $user ? $user->id : null);
 
             if ($deviceQuery->exists()) {
                 return true;
@@ -242,11 +238,11 @@ class DocumentController extends Controller
                         ->orWhere('expires_at', '>', now());
                 });
 
-            // SECURITY: If a user is logged in, only count device activations that
-            // belong to them — not to a previous user who redeemed on this same device.
-            if ($user) {
-                $codesQuery->where('user_id', $user->id);
-            }
+            // SECURITY: Only count device-based redemptions belonging to the
+            // current authentication state (the user's identity or guest null).
+            // This prevents guests or secondary users from inheriting redemptions
+            // left behind by a previous user on the same device.
+            $codesQuery->where('user_id', $user ? $user->id : null);
 
             $codes = $codesQuery->get();
 

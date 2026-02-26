@@ -167,9 +167,8 @@ class RedeemCodeController extends Controller
                     ->orWhere('expires_at', '>', $now);
             });
 
-        if ($userId) {
-            $deviceActivatedQuery->where('user_id', $userId);
-        }
+        // SECURITY: Match against currrent authentication identity (ID or null)
+        $deviceActivatedQuery->where('user_id', $userId);
 
         $deviceActivated = $deviceActivatedQuery->exists();
 
@@ -198,9 +197,8 @@ class RedeemCodeController extends Controller
                         ->orWhere('expires_at', '>', $now);
                 });
 
-            if ($userId) {
-                $docDeviceQuery->where('user_id', $userId);
-            }
+            // SECURITY: Match against currrent authentication identity (ID or null)
+            $docDeviceQuery->where('user_id', $userId);
 
             $documentActivated = $docDeviceQuery->exists();
 
