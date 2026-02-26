@@ -70,7 +70,7 @@ class DocumentController extends Controller
                 'success' => true,
                 'data' => $documents
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("apiIndex fatal error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
@@ -141,6 +141,11 @@ class DocumentController extends Controller
 
             Log::info("Generating requested page $page for doc {$document->id} on-demand");
 
+            if (!function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+                Log::error("exec() is disabled on this server. Cannot generate page images.");
+                abort(503, 'Page image generation is not available on this server. Please contact support.');
+            }
+
             // Generate just this SINGLE page synchronously so the user doesn't get a 404
             $command = sprintf(
                 "/usr/bin/gs -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r300 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
@@ -152,17 +157,17 @@ class DocumentController extends Controller
 
             $output = [];
             $return_var = -1;
-            @\exec($command, $output, $return_var);
-
-            if ($return_var !== 0) {
-                Log::error("Ghostscript single-page generation failed: " . implode("\n", (array) $output));
-                abort(500, 'Page image generation failed. Please try again.');
+            try {
+                exec($command, $output, $return_var);
+            } catch (\Throwable $e) {
+                Log::error("exec() call failed: " . $e->getMessage());
+                abort(503, 'Page image generation is not available on this server.');
             }
 
-            // We do NOT call Artisan::queue('documents:generate-pages') here anymore
-            // because on systems with QUEUE_CONNECTION=sync, it will block this HTTP 
-            // request synchronously for minutes while it builds ALL pages.
-            // Just let the missing pages lazily render themselves one-by-one (~2s each).
+            if ($return_var !== 0) {
+                Log::error("Ghostscript generation failed: " . implode("\n", (array) $output));
+                abort(500, 'Page image generation failed. Please try again.');
+            }
         }
 
         return response()->file($fullPath, [
@@ -299,26 +304,29 @@ class DocumentController extends Controller
                 return 0;
             }
 
-            // 1. Try Ghostscript only if exec() is available
+            // Only try exec/Ghostscript if exec() is actually available on this server
             $execDisabled = in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))));
             if (!$execDisabled && function_exists('exec')) {
-                $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
-                $escapedPath = escapeshellarg($path);
-                $command = "{$gsPath} -q -dNODISPLAY -dNOSAFER -c \"({$path}) (r) file runpdfbegin pdfpagecount = quit\" 2>&1";
-                $output = [];
-                $return_var = -1;
-                @exec($command, $output, $return_var);
+                try {
+                    $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
+                    $command = $gsPath . ' -q -dNODISPLAY -dNOSAFER -c "(' . addslashes($path) . ') (r) file runpdfbegin pdfpagecount = quit" 2>&1';
+                    $output = [];
+                    $return_var = -1;
+                    exec($command, $output, $return_var);
 
-                if ($return_var === 0 && !empty($output)) {
-                    $lastLine = trim(end($output));
-                    if (is_numeric($lastLine) && (int) $lastLine > 0) {
-                        return (int) $lastLine;
+                    if ($return_var === 0 && !empty($output)) {
+                        $lastLine = trim(end($output));
+                        if (is_numeric($lastLine) && (int) $lastLine > 0) {
+                            return (int) $lastLine;
+                        }
                     }
+                } catch (\Throwable $gsError) {
+                    Log::warning("Ghostscript page count failed: " . $gsError->getMessage());
                 }
             }
 
-            // 2. Fallback: pure PHP PDF page scanner
-            $fp = @fopen($path, "rb");
+            // Fallback: pure PHP PDF page scanner (always works, no exec needed)
+            $fp = @fopen($path, 'rb');
             if (!$fp)
                 return 1;
 
@@ -327,14 +335,14 @@ class DocumentController extends Controller
                 $chunk = fread($fp, 8192);
                 if ($chunk === false)
                     break;
-                if (preg_match_all("/\/Page[\s\r\n<\/\[]/", $chunk, $matches)) {
+                if (preg_match_all('/\/Page[\s\r\n<\/\[]/', $chunk, $matches)) {
                     $count += count($matches[0]);
                 }
             }
             fclose($fp);
 
             return max(1, (int) ($count / 2));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::warning("countPdfPages error for {$path}: " . $e->getMessage());
             return 1;
         }
