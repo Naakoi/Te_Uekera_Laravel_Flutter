@@ -35,6 +35,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::get('/documents/{document}/pages/{page}', [App\Http\Controllers\DocumentController::class, 'pageImage']);
 
+// Staff-only diagnostic endpoint for debugging Imagick/PDF issues on live servers
+Route::get('/documents/{document}/diag', [App\Http\Controllers\DocumentController::class, 'imagickDiag']);
+
 // Check status is public (read-only)
 Route::post('/check-status', [App\Http\Controllers\RedeemCodeController::class, 'checkStatus']);
 

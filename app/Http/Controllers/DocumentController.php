@@ -147,12 +147,12 @@ class DocumentController extends Controller
 
             if (!file_exists($pdfPath)) {
                 Log::error("PDF source file missing for doc {$document->id}: {$pdfPath}");
-                abort(404, 'Document source file not found.');
+                return $this->placeholderPngResponse("PDF not found");
             }
 
             if (!extension_loaded('imagick')) {
                 Log::error("Imagick not available and page not pre-generated for doc {$document->id} page $page.");
-                abort(503, 'Page rendering unavailable. Please contact support.');
+                return $this->placeholderPngResponse("Imagick not available");
             }
 
             Log::info("Generating page $page on-the-fly for doc {$document->id} via Imagick");
@@ -161,6 +161,7 @@ class DocumentController extends Controller
                 // Ensure the cache directory exists
                 \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
 
+                // Resolution MUST be set before readImage for it to take effect
                 $imagick = new \Imagick();
                 $imagick->setResolution(150, 150);
                 // Read only the specific page (0-indexed)
@@ -169,21 +170,90 @@ class DocumentController extends Controller
                 $imagick->setImageCompressionQuality(90);
                 // Flatten to white background (PDFs may have transparent bg)
                 $imagick->setImageBackgroundColor('white');
-                $imagick = $imagick->flattenImages();
-                $imagick->writeImage($fullPath);
+                // Use mergeImageLayers instead of deprecated flattenImages()
+                $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                $flat->setImageFormat('png');
+                $flat->writeImage($fullPath);
+                $flat->clear();
+                $flat->destroy();
                 $imagick->clear();
                 $imagick->destroy();
 
                 Log::info("Page $page generated and cached for doc {$document->id}");
             } catch (\Throwable $e) {
                 Log::error("Imagick page generation failed for doc {$document->id} page $page: " . $e->getMessage());
-                abort(500, 'Page image generation failed. Please try again.');
+                return $this->placeholderPngResponse($e->getMessage());
             }
         }
 
         return response()->file($fullPath, [
             'Content-Type' => 'image/png',
             'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    /**
+     * Staff-only diagnostic endpoint: checks Imagick & file availability.
+     * Access: /api/documents/{document}/diag
+     */
+    public function imagickDiag(Document $document)
+    {
+        $user = auth('sanctum')->user() ?? auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isStaff())) {
+            abort(403);
+        }
+
+        $pdfPath = storage_path('app/' . $document->file_path);
+        $info = [
+            'imagick_loaded' => extension_loaded('imagick'),
+            'pdf_file_exists' => file_exists($pdfPath),
+            'pdf_path' => $pdfPath,
+            'exec_disabled' => in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))),
+            'disable_functions' => ini_get('disable_functions'),
+            'page_count_db' => $document->page_count,
+            'pages_dir_exists' => is_dir(storage_path("app/pages/{$document->id}")),
+        ];
+
+        if (extension_loaded('imagick')) {
+            try {
+                $im = new \Imagick();
+                $im->pingImage($pdfPath);
+                $info['imagick_page_count'] = $im->getNumberImages();
+                $im->clear();
+                $im->destroy();
+            } catch (\Throwable $e) {
+                $info['imagick_ping_error'] = $e->getMessage();
+            }
+
+            try {
+                $im2 = new \Imagick();
+                $im2->setResolution(72, 72);
+                $im2->readImage($pdfPath . '[0]');
+                $info['imagick_read_page1'] = 'OK';
+                $im2->clear();
+                $im2->destroy();
+            } catch (\Throwable $e) {
+                $info['imagick_read_error'] = $e->getMessage();
+            }
+        }
+
+        return response()->json($info);
+    }
+
+    /**
+     * Returns a minimal 1x1 transparent PNG as a placeholder so the viewer
+     * doesn't hard-crash with a 500 — the error is logged server-side.
+     */
+    private function placeholderPngResponse(string $reason = ''): \Illuminate\Http\Response
+    {
+        // A 1x1 transparent PNG in binary
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        );
+        return response($png, 200, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'no-store',
+            'X-Page-Error' => substr($reason, 0, 200),
         ]);
     }
 
