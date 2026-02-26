@@ -107,6 +107,24 @@ export default function Login({ status, canResetPassword }) {
                                 />
                                 <InputError message={errors.password} className="mt-2" />
                             </div>
+
+                            {errors.requires_logout_others && (
+                                <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
+                                    <p className="text-xs text-red-600 font-bold leading-tight uppercase italic text-center">
+                                        Account active on another device
+                                    </p>
+                                    <label className="flex items-center cursor-pointer group justify-center">
+                                        <input
+                                            type="checkbox"
+                                            name="logout_others"
+                                            checked={data.logout_others || false}
+                                            onChange={(e) => setData('logout_others', e.target.checked)}
+                                            className="rounded border-red-300 text-red-600 shadow-sm focus:ring-red-500 focus:ring-offset-2 transition-all cursor-pointer bg-white"
+                                        />
+                                        <span className="ms-2 text-[10px] text-red-700 font-black uppercase tracking-tighter transition-colors">Sign out all other devices</span>
+                                    </label>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-between items-center mt-4 mb-6">
@@ -133,10 +151,13 @@ export default function Login({ status, canResetPassword }) {
 
                         <button
                             type="submit"
-                            className="w-full py-4 bg-[#1a1a1a] text-white font-black rounded-xl hover:bg-[#be1e2d] transition-all shadow-lg uppercase tracking-widest text-xs disabled:opacity-50 hover:shadow-red-500/20 active:scale-95 transform duration-200"
+                            className={`w-full py-4 font-black rounded-xl transition-all shadow-lg uppercase tracking-widest text-xs disabled:opacity-50 active:scale-95 transform duration-200 ${errors.requires_logout_others
+                                    ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-500/20'
+                                    : 'bg-1a1a1a text-white hover:bg-[#be1e2d] hover:shadow-red-500/20'
+                                }`}
                             disabled={processing}
                         >
-                            Log In
+                            {errors.requires_logout_others ? 'Sign Out & Log In' : 'Log In'}
                         </button>
                     </form>
                 </div>

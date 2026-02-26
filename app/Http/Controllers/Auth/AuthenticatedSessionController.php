@@ -32,6 +32,32 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = Auth::user();
+
+        // Check for other active sessions (Tokens or DB sessions)
+        $hasOtherTokens = $user->tokens()->exists();
+        $hasOtherWebSessions = \DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->where('id', '!=', $request->session()->getId())
+            ->exists();
+
+        if (($hasOtherTokens || $hasOtherWebSessions) && !$request->boolean('logout_others')) {
+            Auth::guard('web')->logout();
+
+            return back()->withErrors([
+                'email' => 'Your account is already logged in on another device. Please sign out from other devices first.',
+                'requires_logout_others' => true,
+            ]);
+        }
+
+        if ($request->boolean('logout_others')) {
+            $user->tokens()->delete();
+            \DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->where('id', '!=', $request->session()->getId())
+                ->delete();
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(RouteServiceProvider::HOME);

@@ -27,19 +27,21 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Check for active sessions on other devices
-        $hasOtherSessions = $user->tokens()->exists();
+        // Check for active sessions on other devices (both API tokens and Web sessions)
+        $hasOtherTokens = $user->tokens()->exists();
+        $hasWebSessions = \DB::table('sessions')->where('user_id', $user->id)->exists();
 
-        if ($hasOtherSessions && !$request->logout_others) {
+        if (($hasOtherTokens || $hasWebSessions) && !$request->logout_others) {
             return response()->json([
-                'message' => 'Your account is already logged in on another device. Do you want to sign out from all other devices before logging in here?',
+                'message' => 'Your account is already logged in on another device (Mobile or Web). Do you want to sign out from all other devices before logging in here?',
                 'requires_logout_others' => true
-            ], 403); // Forbidden access due to multi-device policy
+            ], 403);
         }
 
         if ($request->logout_others) {
-            // Force logout from all other devices by deleting all tokens
+            // Force logout from all other devices by deleting all tokens and web sessions
             $user->tokens()->delete();
+            \DB::table('sessions')->where('user_id', $user->id)->delete();
         }
 
         $token = $user->createToken('mobile-app')->plainTextToken;
@@ -68,8 +70,11 @@ class AuthController extends Controller
         // Delete all tokens except the current one
         $user->tokens()->where('id', '!=', $currentTokenId)->delete();
 
+        // Delete all web sessions for this user
+        \DB::table('sessions')->where('user_id', $user->id)->delete();
+
         return response()->json([
-            'message' => 'Other devices signed out successfully',
+            'message' => 'Other devices and sessions signed out successfully',
         ]);
     }
 }
