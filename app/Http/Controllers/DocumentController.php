@@ -141,8 +141,44 @@ class DocumentController extends Controller
         $fullPath = storage_path('app/' . $pageCachePath);
 
         if (!file_exists($fullPath)) {
-            Log::warning("Page not pre-generated: doc {$document->id} page $page. Run: php artisan documents:generate-pages --force");
-            abort(404, 'Page image not yet available. Please try again in a moment.');
+            // Pre-generated file doesn't exist — generate on-the-fly via Imagick.
+            // This handles newly-uploaded documents on environments where exec() is disabled (e.g. Cloudways).
+            $pdfPath = storage_path('app/' . $document->file_path);
+
+            if (!file_exists($pdfPath)) {
+                Log::error("PDF source file missing for doc {$document->id}: {$pdfPath}");
+                abort(404, 'Document source file not found.');
+            }
+
+            if (!extension_loaded('imagick')) {
+                Log::error("Imagick not available and page not pre-generated for doc {$document->id} page $page.");
+                abort(503, 'Page rendering unavailable. Please contact support.');
+            }
+
+            Log::info("Generating page $page on-the-fly for doc {$document->id} via Imagick");
+
+            try {
+                // Ensure the cache directory exists
+                \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
+
+                $imagick = new \Imagick();
+                $imagick->setResolution(150, 150);
+                // Read only the specific page (0-indexed)
+                $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                $imagick->setImageFormat('png');
+                $imagick->setImageCompressionQuality(90);
+                // Flatten to white background (PDFs may have transparent bg)
+                $imagick->setImageBackgroundColor('white');
+                $imagick = $imagick->flattenImages();
+                $imagick->writeImage($fullPath);
+                $imagick->clear();
+                $imagick->destroy();
+
+                Log::info("Page $page generated and cached for doc {$document->id}");
+            } catch (\Throwable $e) {
+                Log::error("Imagick page generation failed for doc {$document->id} page $page: " . $e->getMessage());
+                abort(500, 'Page image generation failed. Please try again.');
+            }
         }
 
         return response()->file($fullPath, [

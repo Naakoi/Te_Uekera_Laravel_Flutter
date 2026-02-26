@@ -75,10 +75,29 @@ class StaffController extends Controller
             $return_var = -1;
             \exec($command, $output, $return_var);
 
-            if ($return_var === 0) {
+            if ($return_var === 0 && file_exists($thumbnailFullPath)) {
                 $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
             } else {
-                \Illuminate\Support\Facades\Log::error("pdftoppm failed on upload: " . implode("\n", $output));
+                // Fallback: use Imagick (works on Cloudways where exec() is disabled)
+                if (extension_loaded('imagick')) {
+                    try {
+                        $imagick = new \Imagick();
+                        $imagick->setResolution(150, 150);
+                        $imagick->readImage($pdfPath . '[0]'); // First page only
+                        $imagick->setImageFormat('png');
+                        $imagick->setImageCompressionQuality(85);
+                        $imagick->setImageBackgroundColor('white');
+                        $imagick = $imagick->flattenImages();
+                        $imagick->writeImage($thumbnailFullPath);
+                        $imagick->clear();
+                        $imagick->destroy();
+                        $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
+                    } catch (\Throwable $imagickErr) {
+                        \Illuminate\Support\Facades\Log::error("Imagick thumbnail failed on upload: " . $imagickErr->getMessage());
+                    }
+                } else {
+                    \Illuminate\Support\Facades\Log::error("pdftoppm failed and Imagick not available. Output: " . implode("\n", $output));
+                }
             }
         }
 

@@ -32,59 +32,105 @@ class GenerateDocumentPagesJob implements ShouldQueue
             return;
         }
 
-        // Count pages using Ghostscript (exec() available in queue worker / PHP CLI)
-        $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
-        $countCmd = $gsPath . ' -q -dNODISPLAY -dNOSAFER -c "(' . addslashes($pdfPath) . ') (r) file runpdfbegin pdfpagecount = quit" 2>&1';
-        exec($countCmd, $countOut, $countRet);
+        // --- Try Ghostscript first (works when exec() is available, e.g. locally) ---
+        $execDisabled = in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))));
+        $gsAvailable = !$execDisabled && function_exists('exec');
 
-        $pageCount = 0;
-        if ($countRet === 0 && !empty($countOut) && is_numeric(trim(end($countOut)))) {
-            $pageCount = (int) trim(end($countOut));
-        }
+        if ($gsAvailable) {
+            $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
+            $countCmd = $gsPath . ' -q -dNODISPLAY -dNOSAFER -c "(' . addslashes($pdfPath) . ') (r) file runpdfbegin pdfpagecount = quit" 2>&1';
+            exec($countCmd, $countOut, $countRet);
 
-        if ($pageCount < 1) {
-            Log::warning("GenerateDocumentPagesJob: Could not count pages for doc {$doc->id}");
-            return;
-        }
+            $pageCount = 0;
+            if ($countRet === 0 && !empty($countOut) && is_numeric(trim(end($countOut)))) {
+                $pageCount = (int) trim(end($countOut));
+            }
 
-        // Update page count in database
-        $doc->page_count = $pageCount;
-        $doc->save();
+            if ($pageCount > 0) {
+                $doc->page_count = $pageCount;
+                $doc->save();
 
-        Log::info("GenerateDocumentPagesJob: Generating {$pageCount} pages for doc {$doc->id}");
+                Log::info("GenerateDocumentPagesJob: Generating {$pageCount} pages for doc {$doc->id} via Ghostscript");
 
-        // Ensure output directory exists and is writable
-        $pageDir = storage_path("app/pages/{$doc->id}");
-        Storage::disk('local')->makeDirectory("pages/{$doc->id}");
-        chmod($pageDir, 0777);
+                $pageDir = storage_path("app/pages/{$doc->id}");
+                Storage::disk('local')->makeDirectory("pages/{$doc->id}");
+                chmod($pageDir, 0777);
 
-        // Generate all pages using Ghostscript
-        $outputPattern = $pageDir . '/page-%d.png';
-        $command = sprintf(
-            '%s -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r300 -sOutputFile=%s %s 2>&1',
-            $gsPath,
-            escapeshellarg($outputPattern),
-            escapeshellarg($pdfPath)
-        );
+                $outputPattern = $pageDir . '/page-%d.png';
+                $command = sprintf(
+                    '%s -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r300 -sOutputFile=%s %s 2>&1',
+                    $gsPath,
+                    escapeshellarg($outputPattern),
+                    escapeshellarg($pdfPath)
+                );
 
-        $output = [];
-        $return_var = -1;
-        exec($command, $output, $return_var);
+                $output = [];
+                $return_var = -1;
+                exec($command, $output, $return_var);
 
-        if ($return_var !== 0) {
-            Log::error("GenerateDocumentPagesJob: GS failed for doc {$doc->id}: " . implode("\n", $output));
-            return;
-        }
+                if ($return_var === 0) {
+                    $generated = 0;
+                    for ($p = 1; $p <= $pageCount; $p++) {
+                        if (file_exists("{$pageDir}/page-{$p}.png")) {
+                            $generated++;
+                        }
+                    }
+                    Log::info("GenerateDocumentPagesJob: GS done — {$generated}/{$pageCount} pages for doc {$doc->id}");
+                    return;
+                }
 
-        // Rename page-1.png, page-2.png → page-1.png (GS generates page-1.png style already)
-        // Verify files were created
-        $generated = 0;
-        for ($p = 1; $p <= $pageCount; $p++) {
-            if (file_exists("{$pageDir}/page-{$p}.png")) {
-                $generated++;
+                Log::warning("GenerateDocumentPagesJob: GS render failed for doc {$doc->id}: " . implode("\n", $output));
             }
         }
 
-        Log::info("GenerateDocumentPagesJob: Done — {$generated}/{$pageCount} pages generated for doc {$doc->id}");
+        // --- Fallback: Imagick (works on Cloudways where exec() is disabled) ---
+        if (!extension_loaded('imagick')) {
+            Log::error("GenerateDocumentPagesJob: Neither Ghostscript nor Imagick is available for doc {$doc->id}.");
+            return;
+        }
+
+        Log::info("GenerateDocumentPagesJob: Using Imagick for doc {$doc->id}");
+
+        try {
+            // Count pages with Imagick
+            $counter = new \Imagick();
+            $counter->pingImage($pdfPath);
+            $pageCount = $counter->getNumberImages();
+            $counter->clear();
+            $counter->destroy();
+
+            if ($pageCount < 1) {
+                Log::warning("GenerateDocumentPagesJob: Imagick returned 0 pages for doc {$doc->id}");
+                return;
+            }
+
+            $doc->page_count = $pageCount;
+            $doc->save();
+
+            $pageDir = storage_path("app/pages/{$doc->id}");
+            Storage::disk('local')->makeDirectory("pages/{$doc->id}");
+
+            for ($page = 1; $page <= $pageCount; $page++) {
+                $outputPath = "{$pageDir}/page-{$page}.png";
+                if (file_exists($outputPath)) {
+                    continue;
+                }
+
+                $imagick = new \Imagick();
+                $imagick->setResolution(150, 150);
+                $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                $imagick->setImageFormat('png');
+                $imagick->setImageCompressionQuality(90);
+                $imagick->setImageBackgroundColor('white');
+                $imagick = $imagick->flattenImages();
+                $imagick->writeImage($outputPath);
+                $imagick->clear();
+                $imagick->destroy();
+            }
+
+            Log::info("GenerateDocumentPagesJob: Imagick done — {$pageCount} pages for doc {$doc->id}");
+        } catch (\Throwable $e) {
+            Log::error("GenerateDocumentPagesJob: Imagick failed for doc {$doc->id}: " . $e->getMessage());
+        }
     }
 }
