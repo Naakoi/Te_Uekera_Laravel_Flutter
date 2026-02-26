@@ -45,25 +45,39 @@ class DocumentController extends Controller
 
     public function apiIndex()
     {
-        $documents = Document::latest()->get();
+        try {
+            $documents = Document::latest()->get();
 
-        $documents = $documents->map(function ($doc) {
-            $doc->has_access = $this->hasAccess($doc);
-            if (!$doc->page_count) {
-                $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
+            $documents = $documents->map(function ($doc) {
                 try {
-                    $doc->save();
+                    $doc->has_access = $this->hasAccess($doc);
                 } catch (\Exception $e) {
-                    Log::warning("Could not persist page_count for doc {$doc->id}: " . $e->getMessage());
+                    Log::error("hasAccess error for doc {$doc->id}: " . $e->getMessage());
+                    $doc->has_access = false;
                 }
-            }
-            return $doc;
-        });
+                if (!$doc->page_count) {
+                    try {
+                        $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
+                        $doc->save();
+                    } catch (\Exception $e) {
+                        Log::warning("page_count error for doc {$doc->id}: " . $e->getMessage());
+                    }
+                }
+                return $doc;
+            });
 
-        return response()->json([
-            'success' => true,
-            'data' => $documents
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $documents
+            ]);
+        } catch (\Exception $e) {
+            Log::error("apiIndex fatal error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'data' => []
+            ], 500);
+        }
     }
 
     public function show(Document $document)
@@ -280,41 +294,49 @@ class DocumentController extends Controller
 
     private function countPdfPages($path)
     {
-        if (!file_exists($path)) {
-            return 0;
-        }
-
-        // 1. Try Ghostscript for 100% accuracy
-        $command = sprintf(
-            "/usr/bin/gs -q -dNODISPLAY -dNOSAFER -c \"(%s) (r) file runpdfbegin pdfpagecount = quit\" 2>&1",
-            str_replace(["\\", "(", ")"], ["/", "\\(", "\\)"], $path)
-        );
-
-        $output = [];
-        $return_var = -1;
-        @exec($command, $output, $return_var);
-
-        if ($return_var === 0 && !empty($output)) {
-            $lastLine = trim(end($output));
-            if (is_numeric($lastLine)) {
-                return (int) $lastLine;
+        try {
+            if (!file_exists($path)) {
+                return 0;
             }
-        }
 
-        // 2. Fallback to PHP parsing if GS fails
-        $fp = @fopen($path, "rb");
-        if (!$fp)
+            // 1. Try Ghostscript only if exec() is available
+            $execDisabled = in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))));
+            if (!$execDisabled && function_exists('exec')) {
+                $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
+                $escapedPath = escapeshellarg($path);
+                $command = "{$gsPath} -q -dNODISPLAY -dNOSAFER -c \"({$path}) (r) file runpdfbegin pdfpagecount = quit\" 2>&1";
+                $output = [];
+                $return_var = -1;
+                @exec($command, $output, $return_var);
+
+                if ($return_var === 0 && !empty($output)) {
+                    $lastLine = trim(end($output));
+                    if (is_numeric($lastLine) && (int) $lastLine > 0) {
+                        return (int) $lastLine;
+                    }
+                }
+            }
+
+            // 2. Fallback: pure PHP PDF page scanner
+            $fp = @fopen($path, "rb");
+            if (!$fp)
+                return 1;
+
+            $count = 0;
+            while (!feof($fp)) {
+                $chunk = fread($fp, 8192);
+                if ($chunk === false)
+                    break;
+                if (preg_match_all("/\/Page[\s\r\n<\/\[]/", $chunk, $matches)) {
+                    $count += count($matches[0]);
+                }
+            }
+            fclose($fp);
+
+            return max(1, (int) ($count / 2));
+        } catch (\Exception $e) {
+            Log::warning("countPdfPages error for {$path}: " . $e->getMessage());
             return 1;
-
-        $count = 0;
-        while (!feof($fp)) {
-            $line = fread($fp, 8192);
-            if (preg_match_all("/\/Page\W/", $line, $matches)) {
-                $count += count($matches[0]);
-            }
         }
-        fclose($fp);
-
-        return max(1, (int) ($count / 2));
     }
 }
