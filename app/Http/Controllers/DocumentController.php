@@ -108,9 +108,33 @@ class DocumentController extends Controller
         $fullPath = storage_path('app/' . $pageCachePath);
 
         if (!file_exists($fullPath)) {
-            // Pages must be pre-generated via: php artisan documents:generate-pages
-            Log::warning("Page image not found: {$pageCachePath}. Run: php artisan documents:generate-pages");
-            abort(404, 'Page image not found. Please contact support.');
+            \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
+            $pdfPath = storage_path('app/' . $document->file_path);
+
+            Log::info("Generating requested page $page for doc {$document->id} on-demand");
+
+            // Generate just this SINGLE page synchronously so the user doesn't get a 404
+            $command = sprintf(
+                "/usr/bin/gs -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r300 -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1",
+                $page,
+                $page,
+                escapeshellarg($fullPath),
+                escapeshellarg($pdfPath)
+            );
+
+            $output = [];
+            $return_var = -1;
+            \exec($command, $output, $return_var);
+
+            if ($return_var !== 0) {
+                Log::error("Ghostscript single-page generation failed: " . implode("\n", $output));
+                abort(500, 'Page image generation failed.');
+            }
+
+            // Queue the background job to generate all the other pages so future requests don't hang
+            \Illuminate\Support\Facades\Artisan::queue('documents:generate-pages', [
+                '--document' => $document->id,
+            ]);
         }
 
         return response()->file($fullPath, [
