@@ -156,15 +156,22 @@ class RedeemCodeController extends Controller
         $now = Carbon::now();
         $userId = auth('sanctum')->id(); // May be null for unauthenticated callers
 
-        // Device activation (full access, no document) - must not be expired
-        $deviceActivated = RedeemCode::where('device_id', $request->device_id)
+        // Device activation (full access, no document) - must not be expired.
+        // SECURITY: If a user is logged in, scope device check to their user_id so
+        // a different logged-in user on the same device cannot inherit the activation.
+        $deviceActivatedQuery = RedeemCode::where('device_id', $request->device_id)
             ->where('is_used', true)
             ->whereNull('document_id')
             ->where(function ($q) use ($now) {
                 $q->whereNull('expires_at')
                     ->orWhere('expires_at', '>', $now);
-            })
-            ->exists();
+            });
+
+        if ($userId) {
+            $deviceActivatedQuery->where('user_id', $userId);
+        }
+
+        $deviceActivated = $deviceActivatedQuery->exists();
 
         // Also check by user account (covers new/different devices) when logged in
         $userFullAccess = false;
@@ -179,17 +186,23 @@ class RedeemCodeController extends Controller
                 ->exists();
         }
 
-        // Document specific activation - must not be expired
+        // Document specific activation - must not be expired.
+        // Same user-scoping logic applied for authenticated users.
         $documentActivated = false;
         if ($request->document_id) {
-            $documentActivated = RedeemCode::where('device_id', $request->device_id)
+            $docDeviceQuery = RedeemCode::where('device_id', $request->device_id)
                 ->where('is_used', true)
                 ->where('document_id', $request->document_id)
                 ->where(function ($q) use ($now) {
                     $q->whereNull('expires_at')
                         ->orWhere('expires_at', '>', $now);
-                })
-                ->exists();
+                });
+
+            if ($userId) {
+                $docDeviceQuery->where('user_id', $userId);
+            }
+
+            $documentActivated = $docDeviceQuery->exists();
 
             // Also check by user for the specific document (covers new/different devices)
             if (!$documentActivated && $userId) {
