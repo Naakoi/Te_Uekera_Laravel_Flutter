@@ -325,23 +325,30 @@ class DocumentController extends Controller
                 }
             }
 
-            // Fallback: pure PHP PDF page scanner (always works, no exec needed)
-            $fp = @fopen($path, 'rb');
-            if (!$fp)
+            // Fallback: accurate pure-PHP PDF page counter
+            // Strategy: read the full PDF and find the /Count value in the Pages dictionary
+            $content = @file_get_contents($path);
+            if ($content === false)
                 return 1;
 
-            $count = 0;
-            while (!feof($fp)) {
-                $chunk = fread($fp, 8192);
-                if ($chunk === false)
-                    break;
-                if (preg_match_all('/\/Page[\s\r\n<\/\[]/', $chunk, $matches)) {
-                    $count += count($matches[0]);
+            // Find /Type /Pages ... /Count N — the definitive page count in PDF spec
+            // The Pages dictionary has /Count indicating total page count
+            if (preg_match_all('/\/Count\s+(\d+)/', $content, $matches)) {
+                $counts = array_map('intval', $matches[1]);
+                // The largest /Count value is the root Pages node (total pages)
+                $pageCount = max($counts);
+                if ($pageCount > 0) {
+                    return $pageCount;
                 }
             }
-            fclose($fp);
 
-            return max(1, (int) ($count / 2));
+            // Last resort: count /Page entries
+            $pageEntries = preg_match_all('/\/Type\s*\/Page[^s]/', $content, $m);
+            if ($pageEntries > 0) {
+                return $pageEntries;
+            }
+
+            return 1;
         } catch (\Throwable $e) {
             Log::warning("countPdfPages error for {$path}: " . $e->getMessage());
             return 1;
