@@ -164,8 +164,13 @@ class DocumentController extends Controller
                 // Resolution MUST be set before readImage for it to take effect
                 $imagick = new \Imagick();
                 $imagick->setResolution(150, 150);
+                // Force sRGB colorspace BEFORE reading — critical for CMYK print/newspaper PDFs.
+                // Without this, CMYK PDFs render as green/yellow-tinted images.
+                $imagick->setColorspace(\Imagick::COLORSPACE_SRGB);
                 // Read only the specific page (0-indexed)
                 $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                // Transform to sRGB AFTER reading too (handles embedded CMYK profiles)
+                $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
                 $imagick->setImageFormat('png');
                 $imagick->setImageCompressionQuality(90);
                 // Flatten to white background (PDFs may have transparent bg)

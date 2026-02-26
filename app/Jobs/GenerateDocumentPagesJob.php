@@ -118,12 +118,19 @@ class GenerateDocumentPagesJob implements ShouldQueue
 
                 $imagick = new \Imagick();
                 $imagick->setResolution(150, 150);
+                // Force sRGB before reading — fixes green/tinted rendering of CMYK newspaper PDFs
+                $imagick->setColorspace(\Imagick::COLORSPACE_SRGB);
                 $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                // Transform after reading to handle embedded CMYK profiles
+                $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
                 $imagick->setImageFormat('png');
                 $imagick->setImageCompressionQuality(90);
                 $imagick->setImageBackgroundColor('white');
-                $imagick = $imagick->flattenImages();
-                $imagick->writeImage($outputPath);
+                $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                $flat->setImageFormat('png');
+                $flat->writeImage($outputPath);
+                $flat->clear();
+                $flat->destroy();
                 $imagick->clear();
                 $imagick->destroy();
             }
