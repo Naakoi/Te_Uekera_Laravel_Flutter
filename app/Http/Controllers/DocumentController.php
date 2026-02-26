@@ -26,7 +26,10 @@ class DocumentController extends Controller
 
         $documents = $documents->map(function ($doc) use ($globalActivated) {
             $doc->has_access = $globalActivated || $this->hasAccess($doc);
-            $doc->page_count = $doc->page_count ?? $this->countPdfPages(storage_path('app/' . $doc->file_path));
+            if (!$doc->page_count) {
+                $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
+                $doc->save();
+            }
             return $doc;
         });
 
@@ -42,7 +45,10 @@ class DocumentController extends Controller
 
         $documents = $documents->map(function ($doc) {
             $doc->has_access = $this->hasAccess($doc);
-            $doc->page_count = $doc->page_count ?? $this->countPdfPages(storage_path('app/' . $doc->file_path));
+            if (!$doc->page_count) {
+                $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
+                $doc->save();
+            }
             return $doc;
         });
 
@@ -124,11 +130,11 @@ class DocumentController extends Controller
 
             $output = [];
             $return_var = -1;
-            \exec($command, $output, $return_var);
+            @\exec($command, $output, $return_var);
 
             if ($return_var !== 0) {
-                Log::error("Ghostscript single-page generation failed: " . implode("\n", $output));
-                abort(500, 'Page image generation failed.');
+                Log::error("Ghostscript single-page generation failed: " . implode("\n", (array) $output));
+                abort(500, 'Page image generation failed. Please try again.');
             }
 
             // We do NOT call Artisan::queue('documents:generate-pages') here anymore
@@ -243,7 +249,10 @@ class DocumentController extends Controller
         }
 
         $documents = $documents->map(function ($doc) {
-            $doc->page_count = $doc->page_count ?? $this->countPdfPages(storage_path('app/' . $doc->file_path));
+            if (!$doc->page_count) {
+                $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
+                $doc->save();
+            }
             return $doc;
         });
 
@@ -266,7 +275,7 @@ class DocumentController extends Controller
         // 1. Try Ghostscript for 100% accuracy
         $command = sprintf(
             "/usr/bin/gs -q -dNODISPLAY -dNOSAFER -c \"(%s) (r) file runpdfbegin pdfpagecount = quit\" 2>&1",
-            str_replace(['(', ')'], ['\\(', '\\)'], $path)
+            str_replace(["\\", "(", ")"], ["/", "\\(", "\\)"], $path)
         );
 
         $output = [];

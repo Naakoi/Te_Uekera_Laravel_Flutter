@@ -94,7 +94,7 @@ class StaffController extends Controller
         // We use this instead of Artisan::queue() to prevent blocking if QUEUE_CONNECTION is sync
         $artisanPath = base_path('artisan');
         $command = "php {$artisanPath} documents:generate-pages --document={$document->id} --force > /dev/null 2>&1 &";
-        exec($command);
+        @exec($command);
 
         return redirect()->back()->with('success', 'Document uploaded successfully. Page images are being generated in the background.');
     }
