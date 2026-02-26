@@ -131,10 +131,10 @@ class DocumentController extends Controller
                 abort(500, 'Page image generation failed.');
             }
 
-            // Queue the background job to generate all the other pages so future requests don't hang
-            \Illuminate\Support\Facades\Artisan::queue('documents:generate-pages', [
-                '--document' => $document->id,
-            ]);
+            // We do NOT call Artisan::queue('documents:generate-pages') here anymore
+            // because on systems with QUEUE_CONNECTION=sync, it will block this HTTP 
+            // request synchronously for minutes while it builds ALL pages.
+            // Just let the missing pages lazily render themselves one-by-one (~2s each).
         }
 
         return response()->file($fullPath, [
