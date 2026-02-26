@@ -27,21 +27,30 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Check for active sessions on other devices (both API tokens and Web sessions)
-        $hasOtherTokens = $user->tokens()->exists();
-        $hasWebSessions = \DB::table('sessions')->where('user_id', $user->id)->exists();
+        try {
+            // Check for active sessions on other devices (both API tokens and Web sessions)
+            $hasOtherTokens = $user->tokens()->exists();
+            $hasWebSessions = false;
+            if (config('session.driver') === 'database') {
+                $hasWebSessions = \DB::table('sessions')->where('user_id', $user->id)->exists();
+            }
 
-        if (($hasOtherTokens || $hasWebSessions) && !$request->logout_others) {
-            return response()->json([
-                'message' => 'Your account is already logged in on another device (Mobile or Web). Do you want to sign out from all other devices before logging in here?',
-                'requires_logout_others' => true
-            ], 403);
-        }
+            if (($hasOtherTokens || $hasWebSessions) && !$request->logout_others) {
+                return response()->json([
+                    'message' => 'Your account is already logged in on another device (Mobile or Web). Do you want to sign out from all other devices before logging in here?',
+                    'requires_logout_others' => true
+                ], 403);
+            }
 
-        if ($request->logout_others) {
-            // Force logout from all other devices by deleting all tokens and web sessions
-            $user->tokens()->delete();
-            \DB::table('sessions')->where('user_id', $user->id)->delete();
+            if ($request->logout_others) {
+                // Force logout from all other devices by deleting all tokens and web sessions
+                $user->tokens()->delete();
+                if (config('session.driver') === 'database') {
+                    \DB::table('sessions')->where('user_id', $user->id)->delete();
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Multi-device session check API failed: ' . $e->getMessage());
         }
 
         $token = $user->createToken('mobile-app')->plainTextToken;
@@ -76,8 +85,14 @@ class AuthController extends Controller
             $user->tokens()->where('id', '!=', $token->id)->delete();
         }
 
-        // Delete all web sessions for this user
-        \DB::table('sessions')->where('user_id', $user->id)->delete();
+        try {
+            if (config('session.driver') === 'database') {
+                // Delete all web sessions for this user
+                \DB::table('sessions')->where('user_id', $user->id)->delete();
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed deleting web sessions API: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Other devices and sessions signed out successfully',
