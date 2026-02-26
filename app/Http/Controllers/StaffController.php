@@ -83,12 +83,19 @@ class StaffController extends Controller
                     try {
                         $imagick = new \Imagick();
                         $imagick->setResolution(150, 150);
+                        // Force sRGB before reading — critical for CMYK newspaper PDFs
+                        $imagick->setColorspace(\Imagick::COLORSPACE_SRGB);
                         $imagick->readImage($pdfPath . '[0]'); // First page only
+                        // Transform after reading
+                        $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
                         $imagick->setImageFormat('png');
                         $imagick->setImageCompressionQuality(85);
                         $imagick->setImageBackgroundColor('white');
-                        $imagick = $imagick->flattenImages();
-                        $imagick->writeImage($thumbnailFullPath);
+                        $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                        $flat->setImageFormat('png');
+                        $flat->writeImage($thumbnailFullPath);
+                        $flat->clear();
+                        $flat->destroy();
                         $imagick->clear();
                         $imagick->destroy();
                         $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
