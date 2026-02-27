@@ -34,74 +34,12 @@ class GenerateDocumentPages extends Command
         }
 
         foreach ($documents as $doc) {
-            $pdfPath = storage_path('app/' . $doc->file_path);
-
-            if (!file_exists($pdfPath)) {
-                $this->warn("PDF not found for document [{$doc->id}] {$doc->title}, skipping.");
-                continue;
-            }
-
-            // Count pages with Ghostscript
-            $pageCount = $this->countPages($pdfPath);
-            if ($pageCount === 0) {
-                $this->warn("Could not determine page count for [{$doc->id}] {$doc->title}, skipping.");
-                continue;
-            }
-
-            $this->info("Generating {$pageCount} pages for [{$doc->id}] {$doc->title} at {$dpi} DPI...");
-            $cacheDir = "pages/{$doc->id}";
-            Storage::disk('local')->makeDirectory($cacheDir);
-
-            $bar = $this->output->createProgressBar($pageCount);
-            $bar->start();
-
-            for ($page = 1; $page <= $pageCount; $page++) {
-                $cachePath = "{$cacheDir}/page-{$page}.png";
-                $outputPath = storage_path('app/' . $cachePath);
-
-                if (!$force && file_exists($outputPath)) {
-                    $bar->advance();
-                    continue;
-                }
-
-                $command = sprintf(
-                    '/usr/bin/gs -q -dNOSAFER -dBATCH -dNOPAUSE -dNOPROMPT -sDEVICE=png16m -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r%d -dFirstPage=%d -dLastPage=%d -sOutputFile=%s %s 2>&1',
-                    $dpi,
-                    $page,
-                    $page,
-                    escapeshellarg($outputPath),
-                    escapeshellarg($pdfPath)
-                );
-
-                $output = [];
-                $returnVar = -1;
-                exec($command, $output, $returnVar);
-
-                if ($returnVar !== 0) {
-                    $this->newLine();
-                    $this->error("  Ghostscript failed for page {$page}: " . implode(' ', $output));
-                }
-
-                $bar->advance();
-            }
-
-            $bar->finish();
-            $this->newLine();
-            $this->info("Done: [{$doc->id}] {$doc->title}");
+            $this->info("Dispatching page generation job for [{$doc->id}] {$doc->title}...");
+            \App\Jobs\GenerateDocumentPagesJob::dispatch($doc);
         }
 
-        // Update page_count on the document records
-        foreach ($documents as $doc) {
-            $pdfPath = storage_path('app/' . $doc->file_path);
-            if (file_exists($pdfPath)) {
-                $count = $this->countPages($pdfPath);
-                if ($count > 0) {
-                    $doc->update(['page_count' => $count]);
-                }
-            }
-        }
-
-        $this->info('All documents processed.');
+        $this->info('All document jobs have been dispatched to the queue.');
+        $this->info('You can process them by running: php artisan queue:work');
         return self::SUCCESS;
     }
 
