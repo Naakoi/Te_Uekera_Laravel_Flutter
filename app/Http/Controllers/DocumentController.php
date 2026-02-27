@@ -161,20 +161,29 @@ class DocumentController extends Controller
                 // Ensure the cache directory exists
                 \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
 
-                // Resolution MUST be set before readImage for it to take effect
                 $imagick = new \Imagick();
+                // Resolution MUST be set before readImage
                 $imagick->setResolution(150, 150);
-                // Force sRGB colorspace BEFORE reading — critical for CMYK print/newspaper PDFs.
-                // Without this, CMYK PDFs render as green/yellow-tinted images.
-                $imagick->setColorspace(\Imagick::COLORSPACE_SRGB);
-                // Read only the specific page (0-indexed)
+
+                // Read the image
                 $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
-                // Transform to sRGB AFTER reading too (handles embedded CMYK profiles)
-                $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+
+                // Robust CMYK to sRGB conversion
+                $colorspace = $imagick->getImageColorspace();
+                if ($colorspace === \Imagick::COLORSPACE_CMYK) {
+                    // Step 1: Label it as CMYK if it isn't already properly recognized
+                    $imagick->setImageColorspace(\Imagick::COLORSPACE_CMYK);
+                    // Step 2: Transform to sRGB
+                    $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                } else {
+                    // Ensure it's sRGB even if it was grayscale or something else
+                    $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                }
+
                 $imagick->setImageFormat('png');
                 $imagick->setImageCompressionQuality(90);
-                // Flatten to white background (PDFs may have transparent bg)
                 $imagick->setImageBackgroundColor('white');
+
                 // Use mergeImageLayers instead of deprecated flattenImages()
                 $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
                 $flat->setImageFormat('png');
@@ -184,7 +193,7 @@ class DocumentController extends Controller
                 $imagick->clear();
                 $imagick->destroy();
 
-                Log::info("Page $page generated and cached for doc {$document->id}");
+                Log::info("Page $page generated and cached for doc {$document->id} (CS: $colorspace)");
             } catch (\Throwable $e) {
                 Log::error("Imagick page generation failed for doc {$document->id} page $page: " . $e->getMessage());
                 return $this->placeholderPngResponse($e->getMessage());
@@ -231,6 +240,9 @@ class DocumentController extends Controller
                 $im2->setResolution(72, 72);
                 $im2->readImage($pdfPath . '[0]');
                 $info['imagick_read_page1'] = 'OK';
+                $info['colorspace'] = $im2->getImageColorspace();
+                $info['colorspace_name'] = $this->getColorspaceName($im2->getImageColorspace());
+                $info['image_type'] = $im2->getImageType();
                 $im2->clear();
                 $im2->destroy();
             } catch (\Throwable $e) {
@@ -239,6 +251,17 @@ class DocumentController extends Controller
         }
 
         return response()->json($info);
+    }
+
+    private function getColorspaceName($const)
+    {
+        $constants = (new \ReflectionClass('\Imagick'))->getConstants();
+        foreach ($constants as $name => $value) {
+            if (strpos($name, 'COLORSPACE_') === 0 && $value === $const) {
+                return $name;
+            }
+        }
+        return 'UNKNOWN (' . $const . ')';
     }
 
     /**

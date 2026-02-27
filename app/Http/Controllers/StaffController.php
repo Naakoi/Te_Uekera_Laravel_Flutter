@@ -83,11 +83,19 @@ class StaffController extends Controller
                     try {
                         $imagick = new \Imagick();
                         $imagick->setResolution(150, 150);
-                        // Force sRGB before reading — critical for CMYK newspaper PDFs
-                        $imagick->setColorspace(\Imagick::COLORSPACE_SRGB);
+
+                        // Read the image
                         $imagick->readImage($pdfPath . '[0]'); // First page only
-                        // Transform after reading
-                        $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+
+                        // Robust CMYK to sRGB conversion
+                        $colorspace = $imagick->getImageColorspace();
+                        if ($colorspace === \Imagick::COLORSPACE_CMYK) {
+                            $imagick->setImageColorspace(\Imagick::COLORSPACE_CMYK);
+                            $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                        } else {
+                            $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                        }
+
                         $imagick->setImageFormat('png');
                         $imagick->setImageCompressionQuality(85);
                         $imagick->setImageBackgroundColor('white');
