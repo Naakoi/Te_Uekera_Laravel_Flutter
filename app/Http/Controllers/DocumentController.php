@@ -164,15 +164,24 @@ class DocumentController extends Controller
                 $imagick = new \Imagick();
 
                 try {
-                    // Try high-res first (triggers Ghostscript, might be blocked by policy.xml)
+                    // Method 1: High resolution (best quality, but often blocked by policy.xml)
                     $imagick->setResolution(150, 150);
                     $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
                 } catch (\Throwable $e) {
                     if (str_contains($e->getMessage(), 'security policy')) {
-                        // Fallback: try without setResolution (might use internal PDF lite coder)
-                        $imagick->clear();
-                        $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
-                        Log::info("Used security fallback (low-res) for doc {$document->id} page $page");
+                        // Method 2: No resolution (uses default, often bypasses policy.xml)
+                        try {
+                            $imagick->clear();
+                            $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                            Log::info("Used security fallback (low-res) for doc {$document->id} page $page");
+                        } catch (\Throwable $e2) {
+                            // Method 3: Hint sRGB colorspace BEFORE reading
+                            // This sometimes forces a different, unblocked coder/delegate
+                            $imagick->clear();
+                            $imagick->setColorspace(\Imagick::COLORSPACE_SRGB);
+                            $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                            Log::info("Used security fallback (sRGB-hint) for doc {$document->id} page $page");
+                        }
                     } else {
                         throw $e;
                     }
@@ -219,9 +228,10 @@ class DocumentController extends Controller
      */
     public function imagickDiag(Document $document)
     {
-        // Temporarily open for debugging — remove auth guard to diagnose Cloudways Imagick issues
+        // Version 1.0.6 - Use this to confirm deployment
         $pdfPath = storage_path('app/' . $document->file_path);
         $info = [
+            'diag_version' => '1.0.6',
             'imagick_loaded' => extension_loaded('imagick'),
             'pdf_file_exists' => file_exists($pdfPath),
             'pdf_path' => $pdfPath,
@@ -244,7 +254,7 @@ class DocumentController extends Controller
 
             try {
                 $im2 = new \Imagick();
-                $im2->setResolution(72, 72);
+                // Try to read first page with low res to be safe
                 $im2->readImage($pdfPath . '[0]');
                 $info['imagick_read_page1'] = 'OK';
                 $info['colorspace'] = $im2->getImageColorspace();

@@ -119,14 +119,21 @@ class GenerateDocumentPagesJob implements ShouldQueue
                 $imagick = new \Imagick();
 
                 try {
-                    // Try high-res first
+                    // Method 1: High resolution
                     $imagick->setResolution(150, 150);
                     $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
                 } catch (\Throwable $e) {
                     if (str_contains($e->getMessage(), 'security policy')) {
-                        // Fallback: try without setResolution
-                        $imagick->clear();
-                        $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                        // Method 2: No resolution
+                        try {
+                            $imagick->clear();
+                            $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                        } catch (\Throwable $e2) {
+                            // Method 3: Hint sRGB BEFORE reading
+                            $imagick->clear();
+                            $imagick->setColorspace(\Imagick::COLORSPACE_SRGB);
+                            $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                        }
                     } else {
                         throw $e;
                     }
