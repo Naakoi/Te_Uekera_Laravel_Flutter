@@ -254,8 +254,18 @@ class DocumentController extends Controller
 
             try {
                 $im2 = new \Imagick();
-                // Try to read first page with low res to be safe
-                $im2->readImage($pdfPath . '[0]');
+                try {
+                    $im2->readImage($pdfPath . '[0]');
+                } catch (\Throwable $e2) {
+                    if (str_contains($e2->getMessage(), 'security policy')) {
+                         $im2->clear();
+                         $im2->setColorspace(\Imagick::COLORSPACE_SRGB);
+                         $im2->readImage($pdfPath . '[0]');
+                    } else {
+                        throw $e2;
+                    }
+                }
+                
                 $info['imagick_read_page1'] = 'OK';
                 $info['colorspace'] = $im2->getImageColorspace();
                 $info['colorspace_name'] = $this->getColorspaceName($im2->getImageColorspace());
