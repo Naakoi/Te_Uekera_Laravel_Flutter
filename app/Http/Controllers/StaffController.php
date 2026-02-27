@@ -82,10 +82,20 @@ class StaffController extends Controller
                 if (extension_loaded('imagick')) {
                     try {
                         $imagick = new \Imagick();
-                        $imagick->setResolution(150, 150);
 
-                        // Read the image
-                        $imagick->readImage($pdfPath . '[0]'); // First page only
+                        try {
+                            // Try high-res first
+                            $imagick->setResolution(150, 150);
+                            $imagick->readImage($pdfPath . '[0]'); // First page only
+                        } catch (\Throwable $e) {
+                            if (str_contains($e->getMessage(), 'security policy')) {
+                                // Fallback: try without setResolution
+                                $imagick->clear();
+                                $imagick->readImage($pdfPath . '[0]');
+                            } else {
+                                throw $e;
+                            }
+                        }
 
                         // Robust CMYK to sRGB conversion
                         $colorspace = $imagick->getImageColorspace();
