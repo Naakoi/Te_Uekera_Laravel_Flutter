@@ -162,21 +162,28 @@ class DocumentController extends Controller
                 \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
 
                 $imagick = new \Imagick();
-                // Resolution MUST be set before readImage
-                $imagick->setResolution(150, 150);
 
-                // Read the image
-                $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                try {
+                    // Try high-res first (triggers Ghostscript, might be blocked by policy.xml)
+                    $imagick->setResolution(150, 150);
+                    $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                } catch (\Throwable $e) {
+                    if (str_contains($e->getMessage(), 'security policy')) {
+                        // Fallback: try without setResolution (might use internal PDF lite coder)
+                        $imagick->clear();
+                        $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                        Log::info("Used security fallback (low-res) for doc {$document->id} page $page");
+                    } else {
+                        throw $e;
+                    }
+                }
 
                 // Robust CMYK to sRGB conversion
                 $colorspace = $imagick->getImageColorspace();
                 if ($colorspace === \Imagick::COLORSPACE_CMYK) {
-                    // Step 1: Label it as CMYK if it isn't already properly recognized
                     $imagick->setImageColorspace(\Imagick::COLORSPACE_CMYK);
-                    // Step 2: Transform to sRGB
                     $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
                 } else {
-                    // Ensure it's sRGB even if it was grayscale or something else
                     $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
                 }
 
