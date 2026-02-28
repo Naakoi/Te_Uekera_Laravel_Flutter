@@ -15,18 +15,30 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await storage.read(key: 'auth_token');
+          String? token;
+          String? deviceId;
+
+          try {
+            token = await storage.read(key: 'auth_token');
+            deviceId = await storage.read(key: 'device_id');
+          } catch (e) {
+            // If storage fails (common on Android Keystore issues), proceed as guest
+            print('ApiClient: Secure storage read error: $e');
+          }
+
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
-          // Add Device ID for guest access
-          String? deviceId = await storage.read(key: 'device_id');
           if (deviceId == null) {
             // Generate a permanent device ID if we don't have one
             deviceId =
                 "dev_${DateTime.now().millisecondsSinceEpoch}_${(options.path.hashCode % 1000)}";
-            await storage.write(key: 'device_id', value: deviceId);
+            try {
+              await storage.write(key: 'device_id', value: deviceId);
+            } catch (e) {
+              print('ApiClient: Secure storage write error: $e');
+            }
           }
           options.headers['X-Device-Id'] = deviceId;
 

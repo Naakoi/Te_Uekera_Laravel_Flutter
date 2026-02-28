@@ -22,7 +22,13 @@ class AuthRepositoryImpl implements AuthRepository {
     final token = response['token'];
     // We could also cache the user here
 
-    await storage.write(key: 'auth_token', value: token);
+    try {
+      await storage.write(key: 'auth_token', value: token);
+    } catch (e) {
+      throw Exception(
+        'Failed to save security token. Please check app permissions.',
+      );
+    }
   }
 
   @override
@@ -42,12 +48,20 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<bool> isAuthenticated() async {
-    final token = await storage.read(key: 'auth_token');
-    return token != null;
+    try {
+      final token = await storage.read(key: 'auth_token');
+      return token != null;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
   Future<String?> getToken() async {
-    return await storage.read(key: 'auth_token');
+    try {
+      return await storage.read(key: 'auth_token');
+    } catch (_) {
+      return null;
+    }
   }
 }

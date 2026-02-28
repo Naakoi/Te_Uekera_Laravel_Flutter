@@ -23,9 +23,17 @@ import 'package:screen_protector/screen_protector.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Apply Global Screen Protection
-  await ScreenProtector.preventScreenshotOn();
-  await ScreenProtector.protectDataLeakageWithColor(Colors.black);
+  // Apply Global Screen Protection (only on mobile, handled platform-specifically)
+  try {
+    // Both of these rely on native implementations.
+    // On Android, FLAG_SECURE handles both screenshots and snapshots beautifully.
+    // On iOS, we need these explicit calls for robust protection.
+    await ScreenProtector.preventScreenshotOn();
+    await ScreenProtector.protectDataLeakageWithColor(Colors.black);
+    debugPrint("Global Screen Protection: ENABLED");
+  } catch (e) {
+    debugPrint("Error initializing screen protection: $e");
+  }
 
   final dio = Dio();
   const storage = FlutterSecureStorage();
