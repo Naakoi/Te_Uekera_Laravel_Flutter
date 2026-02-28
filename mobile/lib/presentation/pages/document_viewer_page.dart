@@ -7,6 +7,8 @@ import '/data/models/document_model.dart';
 import '/core/utils/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:screen_protector/screen_protector.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:ui';
 
 class DocumentViewerPage extends StatefulWidget {
   final DocumentModel document;
@@ -26,6 +28,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
   String? _authToken;
   String? _deviceId;
   Map<String, String> _headers = {};
+  bool _isFocused = true;
   bool _isLoadingParams = true;
 
   @override
@@ -40,6 +43,9 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _isFocused = state == AppLifecycleState.resumed;
+    });
     if (state == AppLifecycleState.resumed) {
       _enableScreenProtection();
     }
@@ -138,6 +144,9 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
 
   @override
   Widget build(BuildContext context) {
+    // Blur logic for Web when window loses focus
+    final bool shouldBlur = kIsWeb && !_isFocused;
+
     if (_isLoadingParams) {
       return const Scaffold(
         backgroundColor: Colors.black,
@@ -379,6 +388,54 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
               ),
             ),
           ),
+
+          // Blur Overlay for Web (Deterrent)
+          if (shouldBlur)
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.lock,
+                            size: 48,
+                            color: Color(0xFFbe1e2d),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "PROTECTED MODE",
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 20,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Content is hidden to prevent screenshots.\nClick back into the window to resume.",
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
