@@ -18,27 +18,47 @@ import '/presentation/pages/main_scaffold.dart';
 import '/data/datasources/payment_remote_datasource.dart';
 import '/data/repositories/payment_repository_impl.dart';
 import '/presentation/blocs/payment/payment_bloc.dart';
+import 'package:screen_protector/screen_protector.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Apply Global Screen Protection
+  await ScreenProtector.preventScreenshotOn();
+  await ScreenProtector.protectDataLeakageWithColor(Colors.black);
+
   final dio = Dio();
   const storage = FlutterSecureStorage();
   final apiClient = ApiClient(dio: dio, storage: storage);
-  
-  final documentRemoteDataSource = DocumentRemoteDataSource(apiClient: apiClient);
-  final documentRepository = DocumentRepositoryImpl(remoteDataSource: documentRemoteDataSource);
+
+  final documentRemoteDataSource = DocumentRemoteDataSource(
+    apiClient: apiClient,
+  );
+  final documentRepository = DocumentRepositoryImpl(
+    remoteDataSource: documentRemoteDataSource,
+  );
 
   final authRemoteDataSource = AuthRemoteDataSourceImpl(apiClient);
-  final authRepository = AuthRepositoryImpl(remoteDataSource: authRemoteDataSource, storage: storage);
+  final authRepository = AuthRepositoryImpl(
+    remoteDataSource: authRemoteDataSource,
+    storage: storage,
+  );
 
-  final paymentRemoteDataSource = PaymentRemoteDataSource(apiClient: apiClient, secureStorage: storage);
-  final paymentRepository = PaymentRepositoryImpl(remoteDataSource: paymentRemoteDataSource);
+  final paymentRemoteDataSource = PaymentRemoteDataSource(
+    apiClient: apiClient,
+    secureStorage: storage,
+  );
+  final paymentRepository = PaymentRepositoryImpl(
+    remoteDataSource: paymentRemoteDataSource,
+  );
 
-  runApp(MyApp(
-    documentRepository: documentRepository,
-    authRepository: authRepository,
-    paymentRepository: paymentRepository,
-  ));
+  runApp(
+    MyApp(
+      documentRepository: documentRepository,
+      authRepository: authRepository,
+      paymentRepository: paymentRepository,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -47,7 +67,7 @@ class MyApp extends StatelessWidget {
   final PaymentRepositoryImpl paymentRepository;
 
   const MyApp({
-    super.key, 
+    super.key,
     required this.documentRepository,
     required this.authRepository,
     required this.paymentRepository,
@@ -58,13 +78,18 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => DocumentBloc(repository: documentRepository)..add(FetchDocuments()),
+          create: (context) =>
+              DocumentBloc(repository: documentRepository)
+                ..add(FetchDocuments()),
         ),
         BlocProvider(
-          create: (context) => AuthBloc(authRepository: authRepository)..add(AuthCheckRequested()),
+          create: (context) =>
+              AuthBloc(authRepository: authRepository)
+                ..add(AuthCheckRequested()),
         ),
         BlocProvider(
-          create: (context) => PaymentBloc(paymentRepository: paymentRepository),
+          create: (context) =>
+              PaymentBloc(paymentRepository: paymentRepository),
         ),
       ],
       child: MaterialApp(
@@ -78,16 +103,23 @@ class MyApp extends StatelessWidget {
             surface: const Color(0xFFf4f1ea),
           ),
           scaffoldBackgroundColor: const Color(0xFFf4f1ea),
-          textTheme: GoogleFonts.sourceSerif4TextTheme(
-            Theme.of(context).textTheme,
-          ).copyWith(
-            displayLarge: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w900),
-            displayMedium: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w900),
-            displaySmall: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w900),
-            headlineLarge: GoogleFonts.inter(fontWeight: FontWeight.w700),
-            headlineMedium: GoogleFonts.inter(fontWeight: FontWeight.w700),
-            headlineSmall: GoogleFonts.inter(fontWeight: FontWeight.w700),
-          ),
+          textTheme:
+              GoogleFonts.sourceSerif4TextTheme(
+                Theme.of(context).textTheme,
+              ).copyWith(
+                displayLarge: GoogleFonts.playfairDisplay(
+                  fontWeight: FontWeight.w900,
+                ),
+                displayMedium: GoogleFonts.playfairDisplay(
+                  fontWeight: FontWeight.w900,
+                ),
+                displaySmall: GoogleFonts.playfairDisplay(
+                  fontWeight: FontWeight.w900,
+                ),
+                headlineLarge: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                headlineMedium: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                headlineSmall: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              ),
         ),
         home: const MainScaffold(),
       ),

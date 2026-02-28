@@ -46,9 +46,17 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
   }
 
   Future<void> _enableScreenProtection() async {
-    await ScreenProtector.preventScreenshotOn();
-    // Protect against snapshots/app switcher preview
-    await ScreenProtector.protectDataLeakageWithColor(Colors.black);
+    try {
+      // Small delay or postFrameCallback ensures the platform channel is ready
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await ScreenProtector.preventScreenshotOn();
+        // Protect against snapshots/app switcher preview (Android and iOS)
+        await ScreenProtector.protectDataLeakageWithColor(Colors.black);
+        debugPrint("Screen Protection: ENABLED");
+      });
+    } catch (e) {
+      debugPrint("Error enabling screen protection: $e");
+    }
   }
 
   Future<void> _disableScreenProtection() async {
