@@ -72,8 +72,15 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
 
   Future<void> _loadAuthParams() async {
     const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'auth_token');
-    final deviceId = await storage.read(key: 'device_id');
+    String? token;
+    String? deviceId;
+
+    try {
+      token = await storage.read(key: 'auth_token');
+      deviceId = await storage.read(key: 'device_id');
+    } catch (e) {
+      debugPrint("Storage read error in DocumentViewerPage: $e");
+    }
 
     final Map<String, String> headers = {};
     if (token != null) {
@@ -174,10 +181,14 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
                     '${ApiClient.baseUrl}/documents/${widget.document.id}/pages/$pageNum';
                 List<String> queryParams = [];
                 if (_deviceId != null) {
-                  queryParams.add('device_id=$_deviceId');
+                  queryParams.add(
+                    'device_id=${Uri.encodeQueryComponent(_deviceId!)}',
+                  );
                 }
                 if (_authToken != null) {
-                  queryParams.add('token=$_authToken');
+                  queryParams.add(
+                    'token=${Uri.encodeQueryComponent(_authToken!)}',
+                  );
                 }
                 if (queryParams.isNotEmpty) {
                   imageUrl += '?${queryParams.join('&')}';
