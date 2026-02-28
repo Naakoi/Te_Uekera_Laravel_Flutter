@@ -17,7 +17,8 @@ class DocumentViewerPage extends StatefulWidget {
   State<DocumentViewerPage> createState() => _DocumentViewerPageState();
 }
 
-class _DocumentViewerPageState extends State<DocumentViewerPage> {
+class _DocumentViewerPageState extends State<DocumentViewerPage>
+    with WidgetsBindingObserver {
   late PageController _pageController;
   int _currentPage = 1;
   bool _showControls = true;
@@ -30,10 +31,18 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController();
     _scaleStateController = PhotoViewScaleStateController();
     _loadAuthParams();
     _enableScreenProtection();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _enableScreenProtection();
+    }
   }
 
   Future<void> _enableScreenProtection() async {
@@ -70,6 +79,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _disableScreenProtection();
     _pageController.dispose();
     _scaleStateController.dispose();

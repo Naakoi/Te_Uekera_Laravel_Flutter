@@ -248,7 +248,7 @@ export default function Viewer({ auth, document: docData, pageCount }) {
                     }
                 `}</style>
                 <div
-                    className={`${isFullscreen ? 'w-full h-full p-0' : 'max-w-7xl mx-auto sm:px-6 lg:px-8 h-full'} relative transition-all duration-300 ${!isWindowFocused ? 'blur-2xl' : ''}`}
+                    className={`${isFullscreen ? 'w-full h-full p-0' : 'max-w-7xl mx-auto sm:px-6 lg:px-8 h-full'} relative ${!isWindowFocused ? 'blur-2xl transition-none scale-95' : 'transition-all duration-500'}`}
                     onContextMenu={(e) => e.preventDefault()}
                 >
                     {!isWindowFocused && (
