@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
@@ -24,15 +25,17 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Apply Global Screen Protection (only on mobile, handled platform-specifically)
-  try {
-    // Both of these rely on native implementations.
-    // On Android, FLAG_SECURE handles both screenshots and snapshots beautifully.
-    // On iOS, we need these explicit calls for robust protection.
-    await ScreenProtector.preventScreenshotOn();
-    await ScreenProtector.protectDataLeakageWithColor(Colors.black);
-    debugPrint("Global Screen Protection: ENABLED");
-  } catch (e) {
-    debugPrint("Error initializing screen protection: $e");
+  if (!kIsWeb) {
+    try {
+      // Both of these rely on native implementations.
+      // On Android, FLAG_SECURE handles both screenshots and snapshots beautifully.
+      // On iOS, we need these explicit calls for robust protection.
+      await ScreenProtector.preventScreenshotOn();
+      await ScreenProtector.protectDataLeakageWithColor(Colors.black);
+      debugPrint("Global Screen Protection: ENABLED");
+    } catch (e) {
+      debugPrint("Error initializing screen protection: $e");
+    }
   }
 
   final dio = Dio();
