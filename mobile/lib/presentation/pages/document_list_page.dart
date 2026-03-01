@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '/presentation/blocs/document_bloc.dart';
-import '/presentation/blocs/document_event.dart';
-import '/presentation/blocs/document_state.dart';
-import '/data/models/document_model.dart';
-import '/core/utils/api_client.dart';
+import 'package:mobile/presentation/blocs/document_bloc.dart';
+import 'package:mobile/presentation/blocs/document_event.dart';
+import 'package:mobile/presentation/blocs/document_state.dart';
+import 'package:mobile/data/models/document_model.dart';
+import 'package:mobile/core/utils/api_client.dart';
 import 'document_details_page.dart';
 
 class DocumentListPage extends StatefulWidget {

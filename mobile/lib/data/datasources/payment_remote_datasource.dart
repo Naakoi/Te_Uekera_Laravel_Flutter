@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
-import '/core/utils/api_client.dart';
+import 'package:mobile/core/utils/api_client.dart';
 
 class PaymentRemoteDataSource {
   final ApiClient apiClient;

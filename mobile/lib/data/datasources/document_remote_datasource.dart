@@ -1,5 +1,5 @@
-import '/core/utils/api_client.dart';
-import '/data/models/document_model.dart';
+import 'package:mobile/core/utils/api_client.dart';
+import 'package:mobile/data/models/document_model.dart';
 
 class DocumentRemoteDataSource {
   final ApiClient apiClient;

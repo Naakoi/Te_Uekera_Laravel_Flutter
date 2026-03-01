@@ -1,9 +1,9 @@
-import '/data/datasources/document_remote_datasource.dart';
-import '/data/models/document_model.dart';
-import '/domain/repositories/document_repository.dart';
+import 'package:mobile/data/datasources/document_remote_datasource.dart';
+import 'package:mobile/data/models/document_model.dart';
+import 'package:mobile/domain/repositories/document_repository.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '/core/utils/api_client.dart';
+import 'package:mobile/core/utils/api_client.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';

@@ -3,8 +3,8 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '/data/models/document_model.dart';
-import '/core/utils/api_client.dart';
+import 'package:mobile/data/models/document_model.dart';
+import 'package:mobile/core/utils/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:screen_protector/screen_protector.dart';
 import 'package:flutter/foundation.dart';
@@ -150,7 +150,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
 
   @override
   Widget build(BuildContext context) {
-    // Blur logic for Web when window loses focus (deterrent)
+    // Focus blur logic for Web ( deterrent)
     final bool shouldBlur = kIsWeb && !_isFocused && !kDebugMode;
 
     if (_isLoadingParams) {
@@ -176,7 +176,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
               builder: (BuildContext context, int index) {
                 final pageNum = index + 1;
                 final baseImageUrl =
-                    '${ApiClient.baseUrl}/documents/${widget.document.id}/pages/$pageNum';
+                    '${ApiClient.baseUrl}documents/${widget.document.id}/pages/$pageNum';
                 String imageUrl = baseImageUrl;
                 List<String> queryParams = [];
                 if (_deviceId != null) {

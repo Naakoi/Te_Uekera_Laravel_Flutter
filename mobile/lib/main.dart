@@ -3,21 +3,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '/core/utils/api_client.dart';
-import '/data/datasources/document_remote_datasource.dart';
-import '/data/repositories/document_repository_impl.dart';
-import '/presentation/blocs/document_bloc.dart';
-import '/presentation/blocs/document_event.dart';
+import 'package:mobile/core/utils/api_client.dart';
+import 'package:mobile/data/datasources/document_remote_datasource.dart';
+import 'package:mobile/data/repositories/document_repository_impl.dart';
+import 'package:mobile/presentation/blocs/document_bloc.dart';
+import 'package:mobile/presentation/blocs/document_event.dart';
 
-import '/data/datasources/auth_remote_datasource.dart';
-import '/data/repositories/auth_repository_impl.dart';
-import '/presentation/blocs/auth/auth_bloc.dart';
-import '/presentation/blocs/auth/auth_event.dart';
+import 'package:mobile/data/datasources/auth_remote_datasource.dart';
+import 'package:mobile/data/repositories/auth_repository_impl.dart';
+import 'package:mobile/presentation/blocs/auth/auth_bloc.dart';
+import 'package:mobile/presentation/blocs/auth/auth_event.dart';
 
-import '/presentation/pages/main_scaffold.dart';
-import '/data/datasources/payment_remote_datasource.dart';
-import '/data/repositories/payment_repository_impl.dart';
-import '/presentation/blocs/payment/payment_bloc.dart';
+import 'package:mobile/presentation/pages/main_scaffold.dart';
+import 'package:mobile/data/datasources/payment_remote_datasource.dart';
+import 'package:mobile/data/repositories/payment_repository_impl.dart';
+import 'package:mobile/presentation/blocs/payment/payment_bloc.dart';
 import 'package:screen_protector/screen_protector.dart';
 
 void main() async {

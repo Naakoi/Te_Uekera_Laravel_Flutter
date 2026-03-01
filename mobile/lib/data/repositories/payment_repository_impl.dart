@@ -1,5 +1,5 @@
-import '/domain/repositories/payment_repository.dart';
-import '/data/datasources/payment_remote_datasource.dart';
+import 'package:mobile/domain/repositories/payment_repository.dart';
+import 'package:mobile/data/datasources/payment_remote_datasource.dart';
 
 class PaymentRepositoryImpl implements PaymentRepository {
   final PaymentRemoteDataSource remoteDataSource;

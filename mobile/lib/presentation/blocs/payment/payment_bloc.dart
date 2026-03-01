@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '/domain/repositories/payment_repository.dart';
+import 'package:mobile/domain/repositories/payment_repository.dart';
 import 'payment_event.dart';
 import 'payment_state.dart';
 

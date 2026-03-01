@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '/data/models/document_model.dart';
-import '/presentation/blocs/document_bloc.dart';
-import '/presentation/blocs/document_state.dart';
-import '/presentation/blocs/auth/auth_bloc.dart';
-import '/presentation/blocs/auth/auth_state.dart';
+import 'package:mobile/data/models/document_model.dart';
+import 'package:mobile/presentation/blocs/document_bloc.dart';
+import 'package:mobile/presentation/blocs/document_state.dart';
+import 'package:mobile/presentation/blocs/auth/auth_bloc.dart';
+import 'package:mobile/presentation/blocs/auth/auth_state.dart';
 import 'document_details_page.dart';
 import 'login_page.dart';
 import 'package:url_launcher/url_launcher.dart';

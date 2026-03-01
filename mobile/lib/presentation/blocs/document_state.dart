@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '/data/models/document_model.dart';
+import 'package:mobile/data/models/document_model.dart';
 
 abstract class DocumentState extends Equatable {
   @override

@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '/domain/repositories/document_repository.dart';
+import 'package:mobile/domain/repositories/document_repository.dart';
 // Import DocumentModel explicitly if needed
 import 'document_event.dart';
 import 'document_state.dart';
