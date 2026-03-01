@@ -166,8 +166,9 @@ class _DocumentListPageState extends State<DocumentListPage> {
                         );
                       }
 
+                      Widget sliverContent;
                       if (_isGridView) {
-                        return SliverGrid(
+                        sliverContent = SliverGrid(
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
@@ -183,7 +184,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                           }, childCount: documents.length),
                         );
                       } else {
-                        return SliverList(
+                        sliverContent = SliverList(
                           delegate: SliverChildBuilderDelegate((
                             context,
                             index,
@@ -206,6 +207,47 @@ class _DocumentListPageState extends State<DocumentListPage> {
                           }, childCount: documents.length),
                         );
                       }
+
+                      if (state.isOffline) {
+                        return SliverMainAxisGroup(
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.orange.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.offline_bolt,
+                                      color: Colors.orange,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Offline mode. Showing saved documents. Please connect to the internet to update.',
+                                        style: GoogleFonts.inter(
+                                          color: Colors.orange[800],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            sliverContent,
+                          ],
+                        );
+                      }
+
+                      return sliverContent;
                     } else if (state is DocumentError) {
                       return SliverToBoxAdapter(
                         child: Center(

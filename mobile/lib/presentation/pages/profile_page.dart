@@ -97,7 +97,10 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Welcome Back!',
+                    state.userName != null
+                        ? 'Welcome Back, ${state.userName}!'
+                        : 'Welcome Back!',
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.playfairDisplay(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,

@@ -21,7 +21,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final isAuthenticated = await authRepository.isAuthenticated();
       if (isAuthenticated) {
-        emit(AuthAuthenticated());
+        final userName = await authRepository.getUserName();
+        emit(AuthAuthenticated(userName: userName));
       } else {
         emit(AuthUnauthenticated());
       }
@@ -41,7 +42,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.password,
         logoutOthers: event.logoutOthers,
       );
-      emit(AuthAuthenticated());
+      final userName = await authRepository.getUserName();
+      emit(AuthAuthenticated(userName: userName));
     } catch (e) {
       final message = e.toString().replaceFirst('Exception: ', '');
       if (message == 'MULTI_DEVICE_LOGOUT_REQUIRED') {
@@ -75,7 +77,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await authRepository.logoutOthers();
       // Since current session is still valid, we stay Authenticated
-      emit(AuthAuthenticated());
+      final userName = await authRepository.getUserName();
+      emit(AuthAuthenticated(userName: userName));
     } catch (e) {
       emit(AuthFailure(e.toString()));
     }

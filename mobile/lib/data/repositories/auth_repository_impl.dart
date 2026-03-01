@@ -20,10 +20,13 @@ class AuthRepositoryImpl implements AuthRepository {
       logoutOthers: logoutOthers,
     );
     final token = response['token'];
-    // We could also cache the user here
+    final user = response['user'];
 
     try {
       await storage.write(key: 'auth_token', value: token);
+      if (user != null && user['name'] != null) {
+        await storage.write(key: 'user_name', value: user['name'].toString());
+      }
     } catch (e) {
       throw Exception(
         'Failed to save security token. Please check app permissions.',
@@ -39,6 +42,7 @@ class AuthRepositoryImpl implements AuthRepository {
       // Ignore network errors on logout
     }
     await storage.delete(key: 'auth_token');
+    await storage.delete(key: 'user_name');
   }
 
   @override
@@ -60,6 +64,15 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<String?> getToken() async {
     try {
       return await storage.read(key: 'auth_token');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> getUserName() async {
+    try {
+      return await storage.read(key: 'user_name');
     } catch (_) {
       return null;
     }

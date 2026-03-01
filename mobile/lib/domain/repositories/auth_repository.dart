@@ -8,4 +8,5 @@ abstract class AuthRepository {
   Future<void> logoutOthers();
   Future<bool> isAuthenticated();
   Future<String?> getToken();
+  Future<String?> getUserName();
 }

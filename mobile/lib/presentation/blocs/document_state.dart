@@ -7,18 +7,24 @@ abstract class DocumentState extends Equatable {
 }
 
 class DocumentInitial extends DocumentState {}
+
 class DocumentLoading extends DocumentState {}
+
 class DocumentDownloading extends DocumentState {}
+
 class DocumentDownloadSuccess extends DocumentState {
   final String message;
   DocumentDownloadSuccess(this.message);
 }
+
 class DocumentLoaded extends DocumentState {
   final List<DocumentModel> documents;
-  DocumentLoaded(this.documents);
+  final bool isOffline;
+  DocumentLoaded(this.documents, {this.isOffline = false});
   @override
-  List<Object?> get props => [documents];
+  List<Object?> get props => [documents, isOffline];
 }
+
 class DocumentError extends DocumentState {
   final String message;
   DocumentError(this.message);

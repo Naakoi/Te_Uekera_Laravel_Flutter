@@ -176,9 +176,9 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
               scrollPhysics: const BouncingScrollPhysics(),
               builder: (BuildContext context, int index) {
                 final pageNum = index + 1;
-                // Build image URL carefully to avoid "null" strings being sent as parameters
-                String imageUrl =
+                final baseImageUrl =
                     '${ApiClient.baseUrl}/documents/${widget.document.id}/pages/$pageNum';
+                String imageUrl = baseImageUrl;
                 List<String> queryParams = [];
                 if (_deviceId != null) {
                   queryParams.add(
@@ -197,6 +197,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
                 return PhotoViewGalleryPageOptions(
                   imageProvider: CachedNetworkImageProvider(
                     imageUrl,
+                    cacheKey: baseImageUrl,
                     // Only send headers if NOT on Web to avoid preflight issues
                     headers:
                         (const bool.fromEnvironment('dart.library.js_util') ||

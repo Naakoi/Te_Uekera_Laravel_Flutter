@@ -4,4 +4,5 @@ abstract class DocumentRepository {
   Future<List<DocumentModel>> getDocuments();
   Future<DocumentModel> getDocumentById(int id);
   Future<void> downloadDocument(DocumentModel document);
+  Future<List<DocumentModel>> getCachedDocuments();
 }

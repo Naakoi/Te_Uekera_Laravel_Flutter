@@ -11,7 +11,14 @@ class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
-class AuthAuthenticated extends AuthState {}
+class AuthAuthenticated extends AuthState {
+  final String? userName;
+
+  const AuthAuthenticated({this.userName});
+
+  @override
+  List<Object> get props => [if (userName != null) userName!];
+}
 
 class AuthUnauthenticated extends AuthState {}
 
