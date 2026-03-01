@@ -78,11 +78,22 @@ class DocumentController extends Controller
             }
 
             $data = $documents->map(function ($doc) use ($globalActivated, $user) {
+                // Ensure page_count is populated
+                if (!$doc->page_count) {
+                    $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
+                    try {
+                        $doc->save();
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning("Could not persist page_count for doc {$doc->id}: " . $e->getMessage());
+                    }
+                }
+
                 // Use the pre-fetched user
                 $doc->has_access = $globalActivated || $this->hasAccess($doc, $user);
                 
                 $arr = $doc->toArray();
                 $arr['has_access'] = $doc->has_access;
+                $arr['page_count'] = $doc->page_count;
                 return $arr;
             });
 
