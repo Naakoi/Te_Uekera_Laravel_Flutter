@@ -657,7 +657,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                             clipBehavior: Clip.antiAlias,
                             child: widget.document.thumbnailPath != null
                                 ? Image.network(
-                                    'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${widget.document.thumbnailPath}',
+                                    '/api/images/${widget.document.thumbnailPath}',
                                     fit: BoxFit.cover,
                                     errorBuilder:
                                         (context, error, stackTrace) =>
@@ -746,7 +746,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                       clipBehavior: Clip.antiAlias,
                       child: widget.document.thumbnailPath != null
                           ? Image.network(
-                              'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${widget.document.thumbnailPath}',
+                              '/api/images/${widget.document.thumbnailPath}',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   const Center(
