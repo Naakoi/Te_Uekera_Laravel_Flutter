@@ -25,7 +25,7 @@ class PaymentRemoteDataSource {
     try {
       final deviceId = await _getDeviceId();
       final response = await apiClient.dio.post(
-        '/redeem-code',
+        'redeem-code',
         data: {
           'code': code.toUpperCase(),
           'document_id': documentId,
@@ -52,8 +52,8 @@ class PaymentRemoteDataSource {
   }) async {
     try {
       final response = await apiClient.dio.post(
-        '/payments/stripe/checkout',
-        data: {'plan_id': ?planId, 'document_id': ?documentId},
+        'payments/stripe/checkout',
+        data: {'plan_id': planId, 'document_id': documentId},
       );
 
       if (response.statusCode == 200) {

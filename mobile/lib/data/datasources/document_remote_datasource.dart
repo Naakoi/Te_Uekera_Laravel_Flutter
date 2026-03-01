@@ -8,7 +8,7 @@ class DocumentRemoteDataSource {
 
   Future<List<DocumentModel>> getDocuments() async {
     try {
-      final response = await apiClient.dio.get('/documents');
+      final response = await apiClient.dio.get('documents');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? [];
         return data.map((json) => DocumentModel.fromJson(json)).toList();
@@ -25,7 +25,7 @@ class DocumentRemoteDataSource {
 
   Future<DocumentModel> getDocumentById(int id) async {
     try {
-      final response = await apiClient.dio.get('/documents/$id');
+      final response = await apiClient.dio.get('documents/$id');
       if (response.statusCode == 200) {
         return DocumentModel.fromJson(response.data['data']);
       } else {

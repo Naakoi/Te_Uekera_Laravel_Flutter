@@ -5,7 +5,7 @@ class ApiClient {
   final Dio dio;
   final FlutterSecureStorage storage;
   static const String baseUrl =
-      'https://phplaravel-1593166-6235114.cloudwaysapps.com/api';
+      'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/';
 
   ApiClient({required this.dio, required this.storage}) {
     dio.options.baseUrl = baseUrl;

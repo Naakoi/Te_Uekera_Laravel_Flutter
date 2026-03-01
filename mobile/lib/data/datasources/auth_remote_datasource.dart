@@ -24,7 +24,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await apiClient.post(
-        '/login',
+        'login',
         data: {
           'email': email,
           'password': password,
@@ -48,11 +48,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<void> logout() async {
-    await apiClient.post('/logout');
+    await apiClient.post('logout');
   }
 
   @override
   Future<void> logoutOthers() async {
-    await apiClient.post('/logout-others');
+    await apiClient.post('logout-others');
   }
 }
