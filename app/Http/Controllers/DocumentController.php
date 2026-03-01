@@ -51,6 +51,7 @@ class DocumentController extends Controller
     public function apiIndex()
     {
         try {
+            \Illuminate\Support\Facades\Log::info("API Access: Editions list requested from origin: " . request()->header('Origin') . " IP: " . request()->ip());
             $documents = Document::latest()->get();
             $deviceId = request('device_id') ?? request()->cookie('device_id') ?? request()->header('X-Device-Id');
             
