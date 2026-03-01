@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mobile/data/datasources/document_remote_datasource.dart';
 import 'package:mobile/data/models/document_model.dart';
 import 'package:mobile/domain/repositories/document_repository.dart';
@@ -5,7 +6,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/core/utils/api_client.dart';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' as io;
 import 'package:path_provider/path_provider.dart';
 
 class DocumentRepositoryImpl implements DocumentRepository {
@@ -17,10 +18,20 @@ class DocumentRepositoryImpl implements DocumentRepository {
   Future<List<DocumentModel>> getDocuments() async {
     try {
       final documents = await remoteDataSource.getDocuments();
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/cached_documents.json');
-      final jsonString = jsonEncode(documents.map((e) => e.toJson()).toList());
-      await file.writeAsString(jsonString);
+
+      if (!kIsWeb) {
+        try {
+          final directory = await getApplicationDocumentsDirectory();
+          final file = io.File('${directory.path}/cached_documents.json');
+          final jsonString = jsonEncode(
+            documents.map((e) => e.toJson()).toList(),
+          );
+          await file.writeAsString(jsonString);
+        } catch (e) {
+          debugPrint('Error caching documents: $e');
+        }
+      }
+
       return documents;
     } catch (e) {
       rethrow;
@@ -29,9 +40,11 @@ class DocumentRepositoryImpl implements DocumentRepository {
 
   @override
   Future<List<DocumentModel>> getCachedDocuments() async {
+    if (kIsWeb) return [];
+
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/cached_documents.json');
+      final file = io.File('${directory.path}/cached_documents.json');
       if (await file.exists()) {
         final jsonString = await file.readAsString();
         final List<dynamic> jsonList = jsonDecode(jsonString);
@@ -50,6 +63,9 @@ class DocumentRepositoryImpl implements DocumentRepository {
 
   @override
   Future<void> downloadDocument(DocumentModel document) async {
+    if (kIsWeb)
+      return; // Background downloading for offline use is not relevant for Web flows here
+
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
     final deviceId = await storage.read(key: 'device_id');
