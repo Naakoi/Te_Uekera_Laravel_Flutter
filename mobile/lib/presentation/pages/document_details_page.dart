@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/data/models/document_model.dart';
+import '/core/utils/api_client.dart';
 import '/presentation/blocs/payment/payment_bloc.dart';
 import '/presentation/blocs/payment/payment_event.dart';
 import '/presentation/blocs/payment/payment_state.dart';
@@ -657,7 +658,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                             clipBehavior: Clip.antiAlias,
                             child: widget.document.thumbnailPath != null
                                 ? Image.network(
-                                    '/api/images/${widget.document.thumbnailPath}',
+                                    '${ApiClient.imagesBaseUrl}${widget.document.thumbnailPath}',
                                     fit: BoxFit.cover,
                                     errorBuilder:
                                         (context, error, stackTrace) =>
@@ -746,7 +747,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                       clipBehavior: Clip.antiAlias,
                       child: widget.document.thumbnailPath != null
                           ? Image.network(
-                              '/api/images/${widget.document.thumbnailPath}',
+                              '${ApiClient.imagesBaseUrl}${widget.document.thumbnailPath}',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   const Center(

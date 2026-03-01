@@ -5,6 +5,7 @@ import '/presentation/blocs/document_bloc.dart';
 import '/presentation/blocs/document_event.dart';
 import '/presentation/blocs/document_state.dart';
 import '/data/models/document_model.dart';
+import '/core/utils/api_client.dart';
 import 'document_details_page.dart';
 
 class DocumentListPage extends StatefulWidget {
@@ -625,7 +626,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 height: 120,
                 child: document.thumbnailPath != null
                     ? Image.network(
-                        '/api/images/${document.thumbnailPath}',
+                        '${ApiClient.imagesBaseUrl}${document.thumbnailPath}',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
                             _buildPlaceholderThumbnail(),
@@ -763,7 +764,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                     color: const Color(0xFFe5e5e5),
                     child: document.thumbnailPath != null
                         ? Image.network(
-                            '/api/images/${document.thumbnailPath}',
+                            '${ApiClient.imagesBaseUrl}${document.thumbnailPath}',
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
                                 _buildPlaceholder(document),
