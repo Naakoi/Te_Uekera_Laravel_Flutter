@@ -13,9 +13,12 @@ class DocumentRemoteDataSource {
         final List<dynamic> data = response.data['data'] ?? [];
         return data.map((json) => DocumentModel.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to load documents');
+        throw Exception(
+          'Server returned ${response.statusCode}: ${response.statusMessage}',
+        );
       }
     } catch (e) {
+      print('DocumentRemoteDataSource: Error fetching documents: $e');
       rethrow;
     }
   }

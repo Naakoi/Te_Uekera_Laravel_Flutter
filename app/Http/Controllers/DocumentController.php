@@ -52,31 +52,45 @@ class DocumentController extends Controller
     {
         try {
             $documents = Document::latest()->get();
-
-            $documents = $documents->map(function ($doc) {
-                try {
-                    $doc->has_access = $this->hasAccess($doc);
-                } catch (\Exception $e) {
-                    Log::error("hasAccess error for doc {$doc->id}: " . $e->getMessage());
-                    $doc->has_access = false;
-                }
-                if (!$doc->page_count) {
-                    try {
-                        $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
-                        $doc->save();
-                    } catch (\Exception $e) {
-                        Log::warning("page_count error for doc {$doc->id}: " . $e->getMessage());
+            $deviceId = request()->cookie('device_id') ?? request()->header('X-Device-Id') ?? request('device_id');
+            
+            // Fetch user once for the whole request to optimize N+1 issues in loops
+            $user = auth('sanctum')->user() ?? auth()->user();
+            if (!$user) {
+                $token = request()->query('token') ?? request()->bearerToken();
+                if ($token) {
+                    $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                    if ($accessToken && $accessToken->tokenable) {
+                        $user = $accessToken->tokenable;
+                        auth('sanctum')->setUser($user);
                     }
                 }
-                return $doc;
+            }
+
+            $globalActivated = false;
+            if ($deviceId) {
+                $globalActivated = \App\Models\RedeemCode::where('device_id', $deviceId)
+                    ->where('is_used', true)
+                    ->whereNull('document_id')
+                    ->where('user_id', $user ? $user->id : null)
+                    ->exists();
+            }
+
+            $data = $documents->map(function ($doc) use ($globalActivated, $user) {
+                // Use the pre-fetched user
+                $doc->has_access = $globalActivated || $this->hasAccess($doc, $user);
+                
+                $arr = $doc->toArray();
+                $arr['has_access'] = $doc->has_access;
+                return $arr;
             });
 
             return response()->json([
                 'success' => true,
-                'data' => $documents
+                'data' => $data
             ]);
         } catch (\Throwable $e) {
-            Log::error("apiIndex fatal error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            Log::error("apiIndex fatal error: " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -308,10 +322,10 @@ class DocumentController extends Controller
         ]);
     }
 
-    public function hasAccess(Document $document)
+    public function hasAccess(Document $document, $user = null)
     {
-        // If already authenticated (via middleware), use that
-        $user = auth('sanctum')->user() ?? auth()->user();
+        // If already authenticated (via middleware or pre-fetched), use that
+        $user = $user ?? auth('sanctum')->user() ?? auth()->user();
 
         // If not authenticated, try to manually identify from token (common on these public API routes)
         if (!$user) {
