@@ -19,7 +19,10 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'https://naakoi.github.io',
+        'https://phplaravel-1593166-6235114.cloudwaysapps.com',
+    ],
 
     'allowed_origins_patterns' => [],
 
