@@ -52,11 +52,10 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
   }
 
   Future<void> _enableScreenProtection() async {
+    if (kIsWeb) return; // Screen protection is not supported natively on Web
     try {
-      // Small delay or postFrameCallback ensures the platform channel is ready
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await ScreenProtector.preventScreenshotOn();
-        // Protect against snapshots/app switcher preview (Android and iOS)
         await ScreenProtector.protectDataLeakageWithColor(Colors.black);
         debugPrint("Screen Protection: ENABLED");
       });
@@ -151,8 +150,8 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
 
   @override
   Widget build(BuildContext context) {
-    // Blur logic for Web when window loses focus
-    final bool shouldBlur = kIsWeb && !_isFocused;
+    // Blur logic for Web when window loses focus (deterrent)
+    final bool shouldBlur = kIsWeb && !_isFocused && !kDebugMode;
 
     if (_isLoadingParams) {
       return const Scaffold(
@@ -195,16 +194,13 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
                 }
 
                 return PhotoViewGalleryPageOptions(
-                  imageProvider: CachedNetworkImageProvider(
-                    imageUrl,
-                    cacheKey: baseImageUrl,
-                    // Only send headers if NOT on Web to avoid preflight issues
-                    headers:
-                        (const bool.fromEnvironment('dart.library.js_util') ||
-                            identical(0, 0.0))
-                        ? null
-                        : _headers,
-                  ),
+                  imageProvider: kIsWeb
+                      ? NetworkImage(imageUrl) as ImageProvider
+                      : CachedNetworkImageProvider(
+                          imageUrl,
+                          cacheKey: baseImageUrl,
+                          headers: _headers,
+                        ),
                   scaleStateController: _scaleStateController,
                   initialScale: PhotoViewComputedScale.contained,
                   minScale: PhotoViewComputedScale.contained * 0.8,

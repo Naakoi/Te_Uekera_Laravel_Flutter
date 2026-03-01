@@ -52,12 +52,12 @@ class DocumentController extends Controller
     {
         try {
             $documents = Document::latest()->get();
-            $deviceId = request()->cookie('device_id') ?? request()->header('X-Device-Id') ?? request('device_id');
+            $deviceId = request('device_id') ?? request()->cookie('device_id') ?? request()->header('X-Device-Id');
             
             // Fetch user once for the whole request to optimize N+1 issues in loops
             $user = auth('sanctum')->user() ?? auth()->user();
             if (!$user) {
-                $token = request()->query('token') ?? request()->bearerToken();
+                $token = request('token') ?? request()->bearerToken();
                 if ($token) {
                     $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
                     if ($accessToken && $accessToken->tokenable) {
@@ -327,9 +327,9 @@ class DocumentController extends Controller
         // If already authenticated (via middleware or pre-fetched), use that
         $user = $user ?? auth('sanctum')->user() ?? auth()->user();
 
-        // If not authenticated, try to manually identify from token (common on these public API routes)
+        // If not authenticated, try to manually identify from token (any parameter)
         if (!$user) {
-            $token = request()->query('token') ?? request()->bearerToken();
+            $token = request('token') ?? request()->bearerToken();
             if ($token) {
                 $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
                 if ($accessToken && $accessToken->tokenable) {
@@ -355,8 +355,8 @@ class DocumentController extends Controller
             }
         }
 
-        // Check device-based activation
-        $deviceId = request()->cookie('device_id') ?? request()->header('X-Device-Id') ?? request('device_id');
+        // Check device-based activation (any parameter)
+        $deviceId = request('device_id') ?? request()->cookie('device_id') ?? request()->header('X-Device-Id');
         if ($deviceId) {
             $deviceQuery = \App\Models\RedeemCode::where('device_id', $deviceId)
                 ->where('is_used', true)
