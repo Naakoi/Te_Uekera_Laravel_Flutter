@@ -40,19 +40,29 @@ void main() async {
 
   final dio = Dio();
   const storage = FlutterSecureStorage();
-  final apiClient = ApiClient(dio: dio, storage: storage);
+
+  final authRemoteDataSource = AuthRemoteDataSourceImpl(null as dynamic);
+  final authRepository = AuthRepositoryImpl(
+    remoteDataSource: authRemoteDataSource,
+    storage: storage,
+  );
+  final authBloc = AuthBloc(authRepository: authRepository);
+
+  final apiClient = ApiClient(
+    dio: dio,
+    storage: storage,
+    onUnauthorized: () {
+      authBloc.add(AuthCheckRequested());
+    },
+  );
+
+  authRemoteDataSource.apiClient = apiClient;
 
   final documentRemoteDataSource = DocumentRemoteDataSource(
     apiClient: apiClient,
   );
   final documentRepository = DocumentRepositoryImpl(
     remoteDataSource: documentRemoteDataSource,
-  );
-
-  final authRemoteDataSource = AuthRemoteDataSourceImpl(apiClient);
-  final authRepository = AuthRepositoryImpl(
-    remoteDataSource: authRemoteDataSource,
-    storage: storage,
   );
 
   final paymentRemoteDataSource = PaymentRemoteDataSource(

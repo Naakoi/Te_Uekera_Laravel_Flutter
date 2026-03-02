@@ -65,6 +65,14 @@ class DocumentController extends Controller
                     if ($accessToken && $accessToken->tokenable) {
                         $user = $accessToken->tokenable;
                         auth('sanctum')->setUser($user);
+                    } else {
+                        // SECURITY: If a token was provided but is invalid (e.g., remotely logged out),
+                        // return 401 to force the client to clear its local session storage.
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Your session has expired or been terminated from another device.',
+                            'requires_reauth' => true
+                        ], 401);
                     }
                 }
             }

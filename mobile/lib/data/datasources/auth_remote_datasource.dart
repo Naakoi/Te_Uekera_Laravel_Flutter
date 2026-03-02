@@ -12,7 +12,7 @@ abstract class AuthRemoteDataSource {
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final ApiClient apiClient;
+  ApiClient apiClient;
 
   AuthRemoteDataSourceImpl(this.apiClient);
 

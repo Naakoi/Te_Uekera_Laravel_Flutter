@@ -1,15 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:ui'; // Required for VoidCallback
 
 class ApiClient {
   final Dio dio;
   final FlutterSecureStorage storage;
+  final VoidCallback? onUnauthorized;
   static const String baseUrl =
       'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/';
   static const String imagesBaseUrl =
       'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/';
 
-  ApiClient({required this.dio, required this.storage}) {
+  ApiClient({required this.dio, required this.storage, this.onUnauthorized}) {
     dio.options.baseUrl = baseUrl;
     dio.options.connectTimeout = const Duration(seconds: 30);
     dio.options.receiveTimeout = const Duration(seconds: 30);
@@ -49,7 +51,23 @@ class ApiClient {
         onResponse: (response, handler) {
           return handler.next(response);
         },
-        onError: (DioException e, handler) {
+        onError: (DioException e, handler) async {
+          if (e.response?.statusCode == 401) {
+            // Token is invalid — clear local session
+            print(
+              'ApiClient: 401 Unauthorized detected. Clearing local session.',
+            );
+            try {
+              await storage.delete(key: 'auth_token');
+              await storage.delete(key: 'user_name');
+
+              if (onUnauthorized != null) {
+                onUnauthorized!();
+              }
+            } catch (err) {
+              print('ApiClient: Error clearing storage on 401: $err');
+            }
+          }
           return handler.next(e);
         },
       ),
