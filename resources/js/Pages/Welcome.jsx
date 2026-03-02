@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 export default function Welcome({ auth }) {
     const [challenge, setChallenge] = useState({ animal: 'Dog', translation: 'kamea' });
 
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+
     useEffect(() => {
         const challenges = [
             { animal: 'Dog', translation: 'kamea' },
@@ -14,7 +16,21 @@ export default function Welcome({ auth }) {
             { animal: 'Fish', translation: 'ika' }
         ];
         setChallenge(challenges[Math.floor(Math.random() * challenges.length)]);
+
+        // PWA Install Prompt
+        const handleBeforeInstallPrompt = (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        setDeferredPrompt(null);
+    };
 
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
@@ -33,35 +49,48 @@ export default function Welcome({ auth }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#f4f1ea] text-[#1a1a1a] flex flex-col font-serif">
+        <div className="min-h-screen bg-[#f4f1ea] text-[#1a1a1a] flex flex-col font-serif overflow-x-hidden">
             <Head title="Te Uekera - Digital Newspaper" />
 
             {/* Top Newspaper Info Bar */}
-            <div className="bg-white border-b border-black py-1 px-6 text-[10px] md:text-sm font-sans flex justify-between items-center tracking-tight font-bold">
+            <div className="bg-white border-b border-black py-1 px-4 md:px-6 text-[8px] md:text-sm font-sans flex justify-between items-center tracking-tight font-bold sticky top-0 z-[100]">
                 <span>Ana Nuutibeeba ni koaua te I-Kiribati</span>
                 <span>Reitaki nakon 63030150</span>
             </div>
 
             {/* Main Masthead */}
-            <div className="bg-[#be1e2d] px-6 py-6 border-b-2 border-black relative overflow-hidden">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="flex items-center gap-6">
-                        <ApplicationLogo className="w-20 h-20 shadow-2xl rounded-xl border-2 border-white/20" />
+            <div className="bg-[#be1e2d] px-4 py-4 md:px-6 md:py-6 border-b-2 border-black relative overflow-hidden">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
+                    <div className="flex items-center gap-3 md:gap-6">
+                        <ApplicationLogo className="w-12 h-12 md:w-20 md:h-20 shadow-2xl rounded-xl border-2 border-white/20" />
                         <h1
-                            className="text-6xl md:text-9xl font-black tracking-tighter uppercase leading-none text-white"
+                            className="text-4xl sm:text-6xl md:text-9xl font-black tracking-tighter uppercase leading-none text-white transition-all"
                             style={{
-                                textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 6px 0 rgba(0,0,0,1)'
+                                textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 4px 0 rgba(0,0,0,1)'
                             }}
                         >
                             Te Uekera
                         </h1>
                     </div>
 
-                    <nav className="font-sans font-bold flex gap-4 text-white">
+                    <nav className="font-sans font-bold flex flex-wrap justify-center gap-3 md:gap-4 text-white">
+                        {deferredPrompt && (
+                            <button
+                                onClick={handleInstallClick}
+                                className="bg-[#ffde00] text-black px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest hover:bg-white transition-colors shadow-lg flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                <span>Install</span>
+                            </button>
+                        )}
                         {auth.user ? (
-                            <Link href={route('dashboard')} className="hover:bg-white/10 px-4 py-2 rounded transition">Dashboard</Link>
+                            <Link href={route('dashboard')} className="hover:bg-white/10 px-4 py-2 rounded transition whitespace-nowrap">Dashboard</Link>
                         ) : (
-                            <Link href={route('login')} className="bg-[#1a1a1a] hover:bg-black text-white px-6 py-2 rounded transition shadow-lg uppercase tracking-wider text-sm border border-white/20">Login</Link>
+                            <>
+                                <Link href={route('login')} className="bg-[#1a1a1a] hover:bg-black text-white px-6 py-2 rounded transition shadow-lg uppercase tracking-wider text-sm border border-white/20 whitespace-nowrap">Login</Link>
+                            </>
                         )}
                     </nav>
                 </div>
@@ -79,27 +108,27 @@ export default function Welcome({ auth }) {
 
             <main className="flex-1 max-w-7xl mx-auto w-full p-6 md:p-12 relative z-10">
                 {/* Hero Section - Premier Modern */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 mb-24 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 md:gap-12 mb-16 md:mb-24 items-start">
                     <div className="lg:col-span-3">
-                        <div className="inline-block bg-[#be1e2d] text-white px-5 py-1 text-sm font-black uppercase tracking-[0.2em] mb-8 rounded-full shadow-lg shadow-red-500/20">Headline News</div>
+                        <div className="inline-block bg-[#be1e2d] text-white px-5 py-1 text-[10px] md:text-sm font-black uppercase tracking-[0.2em] mb-6 md:mb-8 rounded-full shadow-lg shadow-red-500/20">Headline News</div>
                         <h2
-                            className="text-5xl md:text-7xl font-black mb-10 leading-[0.9] text-[#1a1a1a] uppercase font-display subpixel-antialiased"
+                            className="text-4xl md:text-7xl font-black mb-6 md:mb-10 leading-[0.9] text-[#1a1a1a] uppercase font-display subpixel-antialiased"
                             style={{ textRendering: 'optimizeLegibility' }}
                         >
                             THE FUTURE OF NEWS, <br />
                             <span className="text-[#be1e2d] font-sans font-bold relative inline-block tracking-tight">
                                 DIGITALLY SECURED WORLD
-                                <span className="absolute -bottom-2 left-0 w-full h-2 bg-[#ffde00] -z-10 opacity-50"></span>
+                                <span className="absolute -bottom-1 md:-bottom-2 left-0 w-full h-1 md:h-2 bg-[#ffde00] -z-10 opacity-50"></span>
                             </span>
                         </h2>
-                        <p className="text-2xl md:text-4xl leading-tight text-gray-800 max-w-4xl italic mb-12 border-l-8 border-[#be1e2d] pl-8 py-2 font-medium">
+                        <p className="text-xl md:text-4xl leading-tight text-gray-800 max-w-4xl italic mb-8 md:mb-12 border-l-4 md:border-l-8 border-[#be1e2d] pl-4 md:pl-8 py-2 font-medium">
                             Access the latest editions of Te Uekera from anywhere in the world. High-quality news for our community.
                         </p>
 
-                        <div className="flex flex-col md:flex-row gap-12 items-start">
+                        <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
                             <Link
                                 href={route('documents.index')}
-                                className="px-14 py-6 bg-[#be1e2d] text-white font-sans font-black rounded-2xl shadow-2xl shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-1 transition-all uppercase tracking-widest text-lg active:scale-95 text-center w-full md:w-auto"
+                                className="px-10 md:px-14 py-4 md:py-6 bg-[#be1e2d] text-white font-sans font-black rounded-2xl shadow-2xl shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-1 transition-all uppercase tracking-widest text-base md:text-lg active:scale-95 text-center w-full md:w-auto"
                             >
                                 Browse Editions
                             </Link>
@@ -265,34 +294,34 @@ export default function Welcome({ auth }) {
                 {/* App Detailed Promo - Modern Glassmorphism */}
                 <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-[#be1e2d]/20 to-[#1e3a8a]/20 blur-3xl opacity-30 -z-10 group-hover:opacity-50 transition-opacity"></div>
-                    <div className="bg-white/40 backdrop-blur-2xl border border-white/40 p-12 lg:p-20 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                    <div className="bg-white/40 backdrop-blur-2xl border border-white/40 p-8 lg:p-20 rounded-[2rem] md:rounded-[3rem] shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#ffde00]/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
 
-                        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-20">
+                        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
                             <div className="flex-1">
-                                <span className="bg-[#be1e2d] text-white px-6 py-1.5 text-xs font-black uppercase tracking-[0.3em] mb-8 inline-block rounded-full">Premier Mobile</span>
-                                <h3 className="text-6xl md:text-7xl font-black mb-10 uppercase tracking-tighter leading-none font-display text-[#1a1a1a]">Read Anywhere.</h3>
-                                <p className="text-gray-800 text-2xl mb-12 leading-relaxed font-serif italic border-l-8 border-[#ffde00] pl-10 py-2">
+                                <span className="bg-[#be1e2d] text-white px-6 py-1.5 text-[10px] md:text-xs font-black uppercase tracking-[0.3em] mb-8 inline-block rounded-full">Premier Mobile</span>
+                                <h3 className="text-4xl md:text-7xl font-black mb-6 md:mb-10 uppercase tracking-tighter leading-none font-display text-[#1a1a1a]">Read Anywhere.</h3>
+                                <p className="text-gray-800 text-lg md:text-2xl mb-8 md:mb-12 leading-relaxed font-serif italic border-l-4 md:border-l-8 border-[#ffde00] pl-6 md:pl-10 py-2">
                                     Our new digital experience allows you to download full newspaper editions and read them offline, anytime, anywhere.
                                 </p>
 
-                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-14 font-sans font-black uppercase text-xs tracking-widest text-black/60">
-                                    <li className="flex items-center gap-5">
-                                        <div className="bg-[#1a1a1a] text-white p-3 rounded-2xl shadow-lg"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></div>
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 mb-10 md:mb-14 font-sans font-black uppercase text-[10px] md:text-xs tracking-widest text-black/60">
+                                    <li className="flex items-center gap-3 md:gap-5">
+                                        <div className="bg-[#1a1a1a] text-white p-2.5 md:p-3 rounded-2xl shadow-lg"><svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></div>
                                         <span>Breaking Alerts</span>
                                     </li>
-                                    <li className="flex items-center gap-5">
-                                        <div className="bg-[#1a1a1a] text-white p-3 rounded-2xl shadow-lg"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg></div>
+                                    <li className="flex items-center gap-3 md:gap-5">
+                                        <div className="bg-[#1a1a1a] text-white p-2.5 md:p-3 rounded-2xl shadow-lg"><svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg></div>
                                         <span>Offline Journal</span>
                                     </li>
                                 </ul>
 
                                 <button
-                                    onClick={() => window.alert('To install: \n\nOn iOS: Tap Share -> Add to Home Screen\nOn Android: Tap Menu -> Install App')}
-                                    className="group relative inline-flex items-center gap-4 bg-[#1a1a1a] text-white px-14 py-6 rounded-3xl font-black transition-all hover:bg-[#be1e2d] hover:shadow-[0_20px_40px_-10px_rgba(190,30,45,0.4)] uppercase tracking-widest text-lg overflow-hidden"
+                                    onClick={handleInstallClick}
+                                    className="group relative inline-flex items-center gap-3 md:gap-4 bg-[#1a1a1a] text-white px-10 md:px-14 py-4 md:py-6 rounded-2xl md:rounded-3xl font-black transition-all hover:bg-[#be1e2d] hover:shadow-[0_20px_40px_-10px_rgba(190,30,45,0.4)] uppercase tracking-widest text-base md:text-lg overflow-hidden w-full md:w-auto justify-center"
                                 >
-                                    <span className="relative z-10">Get the App</span>
-                                    <svg className="w-6 h-6 relative z-10 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                    <span className="relative z-10">{deferredPrompt ? 'Install Mobile App' : 'Get the App'}</span>
+                                    <svg className="w-5 h-5 md:w-6 md:h-6 relative z-10 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                                 </button>
                             </div>

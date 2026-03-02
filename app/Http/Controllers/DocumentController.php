@@ -17,14 +17,23 @@ class DocumentController extends Controller
         $deviceId = request()->cookie('device_id');
 
         $globalActivated = false;
-        if ($deviceId) {
-            $globalQuery = \App\Models\RedeemCode::where('device_id', $deviceId)
-                ->where('is_used', true)
-                ->whereNull('document_id');
+        $currentUser = auth()->user();
+        
+        if ($currentUser || $deviceId) {
+            $globalQuery = \App\Models\RedeemCode::where('is_used', true)
+                ->whereNull('document_id')
+                ->where(function($q) {
+                    $q->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+                });
 
-            // SECURITY: Ensure global activation belongs to the current identity
-            // (user ID or null for guest). This prevents cross-user leakage.
-            $globalQuery->where('user_id', auth()->id());
+            if ($currentUser) {
+                // If logged in, access is tied to the account (every device)
+                $globalQuery->where('user_id', $currentUser->id);
+            } else {
+                // If guest, only check device and ensure it wasn't a user-based activation
+                $globalQuery->where('device_id', $deviceId)->whereNull('user_id');
+            }
 
             $globalActivated = $globalQuery->exists();
         }
@@ -78,12 +87,21 @@ class DocumentController extends Controller
             }
 
             $globalActivated = false;
-            if ($deviceId) {
-                $globalActivated = \App\Models\RedeemCode::where('device_id', $deviceId)
-                    ->where('is_used', true)
+            if ($user || $deviceId) {
+                $globalQuery = \App\Models\RedeemCode::where('is_used', true)
                     ->whereNull('document_id')
-                    ->where('user_id', $user ? $user->id : null)
-                    ->exists();
+                    ->where(function($q) {
+                        $q->whereNull('expires_at')
+                          ->orWhere('expires_at', '>', now());
+                    });
+
+                if ($user) {
+                    $globalQuery->where('user_id', $user->id);
+                } else {
+                    $globalQuery->where('device_id', $deviceId)->whereNull('user_id');
+                }
+                
+                $globalActivated = $globalQuery->exists();
             }
 
             $data = $documents->map(function ($doc) use ($globalActivated, $user) {
@@ -150,6 +168,7 @@ class DocumentController extends Controller
         }
 
         // Restrict raw PDF streaming to Staff and Admin to prevent easy extraction
+        /** @var \App\Models\User $currentUser */
         $currentUser = auth()->user();
         if (!$currentUser || (!$currentUser->isStaff() && !$currentUser->isAdmin())) {
             abort(403, 'Direct file access is restricted. Please use the reader.');
@@ -367,6 +386,7 @@ class DocumentController extends Controller
             }
         }
 
+        /** @var \App\Models\User $user */
         if ($user) {
             if ($user->isAdmin() || $user->isStaff()) {
                 return true;
@@ -383,11 +403,11 @@ class DocumentController extends Controller
             }
         }
 
-        // Check device-based activation (any parameter)
+        // Check for active activations (Full Access or Document Specific)
         $deviceId = request('device_id') ?? request()->cookie('device_id') ?? request()->header('X-Device-Id');
-        if ($deviceId) {
-            $deviceQuery = \App\Models\RedeemCode::where('device_id', $deviceId)
-                ->where('is_used', true)
+        
+        if ($user || $deviceId) {
+            $activationQuery = \App\Models\RedeemCode::where('is_used', true)
                 ->where(function ($query) use ($document) {
                     $query->whereNull('document_id')
                         ->orWhere('document_id', $document->id);
@@ -397,13 +417,15 @@ class DocumentController extends Controller
                         ->orWhere('expires_at', '>', now());
                 });
 
-            // SECURITY: Device activation MUST belong to the current authentication state.
-            // (The logged-in user's ID, or null for guests).
-            // This prevents guests or a different user from inheriting redemptions
-            // left behind on a shared device.
-            $deviceQuery->where('user_id', $user ? $user->id : null);
+            if ($user) {
+                // Logged in: check user account (allows access on any device they own)
+                $activationQuery->where('user_id', $user->id);
+            } else {
+                // Guest: check device only if not activated by a user
+                $activationQuery->where('device_id', $deviceId)->whereNull('user_id');
+            }
 
-            if ($deviceQuery->exists()) {
+            if ($activationQuery->exists()) {
                 return true;
             }
         }
