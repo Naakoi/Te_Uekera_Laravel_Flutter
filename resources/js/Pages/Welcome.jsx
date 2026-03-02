@@ -125,13 +125,22 @@ export default function Welcome({ auth }) {
                             Access the latest editions of Te Uekera from anywhere in the world. High-quality news for our community.
                         </p>
 
-                        <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
+                        <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-start w-full md:w-auto">
                             <Link
                                 href={route('documents.index')}
-                                className="px-10 md:px-14 py-4 md:py-6 bg-[#be1e2d] text-white font-sans font-black rounded-2xl shadow-2xl shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-1 transition-all uppercase tracking-widest text-base md:text-lg active:scale-95 text-center w-full md:w-auto"
+                                className="px-10 md:px-14 py-4 md:py-6 bg-[#be1e2d] text-white font-sans font-black rounded-2xl shadow-2xl shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-1 transition-all uppercase tracking-widest text-base md:text-lg active:scale-95 text-center w-full md:w-auto shrink-0"
                             >
                                 Browse Editions
                             </Link>
+
+                            {auth.user && (
+                                <Link
+                                    href={route('library.index')}
+                                    className="px-10 md:px-14 py-4 md:py-6 bg-[#1a1a1a] text-white font-sans font-black rounded-2xl shadow-2xl shadow-black/20 hover:shadow-black/40 hover:-translate-y-1 transition-all uppercase tracking-widest text-base md:text-lg active:scale-95 text-center w-full md:w-auto shrink-0"
+                                >
+                                    My Library
+                                </Link>
+                            )}
 
                             {!auth.user && (
                                 <div className="w-full max-w-md bg-white p-8 rounded-[2.5rem] shadow-2xl border-4 border-[#be1e2d]/10 relative overflow-hidden group">
@@ -353,7 +362,7 @@ export default function Welcome({ auth }) {
                         </div>
                     </div>
                 </div>
-            </main>
+            </main >
 
             <footer className="mt-32 pb-20 px-8 relative overflow-hidden">
                 <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-black/10 to-transparent"></div>

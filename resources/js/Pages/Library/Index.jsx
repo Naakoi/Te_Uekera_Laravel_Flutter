@@ -1,11 +1,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 export default function Index({ auth, documents }) {
     const [offlineDocs, setOfflineDocs] = useState([]);
     const [caching, setCaching] = useState(null);
     const [isAppOffline, setIsAppOffline] = useState(!navigator.onLine);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'downloaded'
+    const [sortBy, setSortBy] = useState('newest');
+    const [isGridView, setIsGridView] = useState(true);
 
     useEffect(() => {
         const handleOnline = () => setIsAppOffline(false);
@@ -46,7 +50,30 @@ export default function Index({ auth, documents }) {
         };
     }, [documents]);
 
-    const saveForOffline = (doc) => {
+    const filteredDocuments = useMemo(() => {
+        let filtered = documents.filter(doc => {
+            const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase());
+
+            const isCached = offlineDocs.includes(doc.id);
+            let matchesFilter = true;
+            if (filterStatus === 'downloaded') {
+                matchesFilter = isCached;
+            }
+
+            return matchesSearch && matchesFilter;
+        });
+
+        return filtered.sort((a, b) => {
+            if (sortBy === 'newest') return new Date(b.created_at) - new Date(a.created_at);
+            if (sortBy === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
+            if (sortBy === 'alphabetical') return a.title.localeCompare(b.title);
+            return 0;
+        });
+    }, [documents, searchQuery, filterStatus, sortBy, offlineDocs]);
+
+    const saveForOffline = (e, doc) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
             alert('Offline features are not supported in this browser or pending activation.');
             return;
@@ -64,128 +91,139 @@ export default function Index({ auth, documents }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={
-                <div className="flex items-center justify-between">
-                    <span className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        My Digital Library
-                    </span>
-                    {isAppOffline && (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 text-xs font-black uppercase tracking-widest rounded-full border border-amber-200 dark:border-amber-800">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                            </span>
-                            Offline Mode
-                        </div>
-                    )}
-                </div>
-            }
+            header="My Digital Library"
         >
             <Head title="My Library" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    {/* Offline Banner */}
-                    {isAppOffline && (
-                        <div className="mb-8 bg-indigo-600 rounded-xl p-6 text-white shadow-xl flex items-center gap-6">
-                            <div className="bg-white/20 p-3 rounded-full">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                </svg>
+            <div className="pb-24 pt-6 md:pt-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Library Header */}
+                    <div className="mb-8 md:mb-12 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="text-center md:text-left">
+                            <span className="inline-block bg-[#1a1a1a] text-white px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-full shadow-lg">Purchased Collection</span>
+                            <h2 className="mt-4 text-4xl md:text-6xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-sans leading-none">My Library</h2>
+                        </div>
+
+                        {isAppOffline && (
+                            <div className="flex items-center gap-3 px-6 py-3 bg-[#be1e2d] text-white rounded-2xl shadow-xl shadow-red-500/20 animate-pulse">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                                <span className="text-xs font-black uppercase tracking-widest">Offline Mode Active</span>
                             </div>
-                            <div>
-                                <h3 className="text-xl font-black uppercase tracking-tight">Offline Reading Enabled</h3>
-                                <p className="opacity-90 font-medium">You can still read any newspapers marked with a green checkmark below.</p>
+                        )}
+                    </div>
+
+                    {/* Search and Controls */}
+                    <div className="bg-white/50 backdrop-blur-xl border border-white/60 p-4 md:p-6 rounded-[2rem] shadow-xl mb-8 md:mb-12">
+                        <div className="flex flex-col lg:flex-row gap-6 items-center">
+                            <div className="relative w-full lg:flex-1">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg className="h-5 w-5 text-[#be1e2d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search your library..."
+                                    className="block w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-[#be1e2d] rounded-2xl shadow-sm font-sans font-bold text-gray-900 transition-all placeholder:text-gray-400 outline-none"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3 w-full lg:w-auto">
+                                <div className="flex bg-black/5 p-1 rounded-xl">
+                                    {['all', 'downloaded'].map((f) => (
+                                        <button
+                                            key={f}
+                                            onClick={() => setFilterStatus(f)}
+                                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterStatus === f ? 'bg-white text-[#be1e2d] shadow-sm' : 'text-gray-500 hover:text-black'
+                                                }`}
+                                        >
+                                            {f}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <select
+                                    className="bg-white border-2 border-transparent focus:border-[#be1e2d] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer shadow-sm"
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                >
+                                    <option value="newest">Newest</option>
+                                    <option value="oldest">Oldest</option>
+                                    <option value="alphabetical">A-Z</option>
+                                </select>
+
+                                <div className="flex bg-white p-1 rounded-xl shadow-sm border border-black/5">
+                                    <button onClick={() => setIsGridView(true)} className={`p-2 rounded-lg ${isGridView ? 'bg-[#be1e2d]/10 text-[#be1e2d]' : 'text-gray-300'}`}>
+                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                                    </button>
+                                    <button onClick={() => setIsGridView(false)} className={`p-2 rounded-lg ${!isGridView ? 'bg-[#be1e2d]/10 text-[#be1e2d]' : 'text-gray-300'}`}>
+                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    )}
+                    </div>
 
-                    {documents.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {documents.map((doc) => {
+                    {/* Collection View */}
+                    {isGridView ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {filteredDocuments.map((doc) => {
                                 const isCached = offlineDocs.includes(doc.id);
                                 const isAvailable = !isAppOffline || isCached;
 
                                 return (
-                                    <div key={doc.id} className={`bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col group transition-all duration-300 ${!isAvailable ? 'opacity-60 grayscale' : ''}`}>
+                                    <div key={doc.id} className={`group bg-white/70 backdrop-blur-2xl border border-white/40 shadow-xl rounded-[2rem] overflow-hidden transition-all flex flex-col h-full ${!isAvailable ? 'opacity-40' : 'hover:-translate-y-2'}`}>
                                         <Link
                                             href={isAvailable ? route('documents.reader', doc.id) : '#'}
-                                            className={`block aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-gray-700 relative ${!isAvailable ? 'cursor-not-allowed' : ''}`}
+                                            className={`block aspect-[3/4] overflow-hidden bg-[#f4f1ea] relative ${!isAvailable ? 'cursor-not-allowed' : ''}`}
                                             onClick={(e) => !isAvailable && e.preventDefault()}
                                         >
                                             {doc.thumbnail_path ? (
-                                                <img
-                                                    src={`/storage/${doc.thumbnail_path}`}
-                                                    alt={doc.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                                />
+                                                <img src={`/storage/${doc.thumbnail_path}`} alt={doc.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                             ) : (
-                                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
-                                                    <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
+                                                <div className="w-full h-full flex items-center justify-center text-black/10"><svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg></div>
                                             )}
 
-                                            {isAvailable && (
-                                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 flex items-center justify-center transition-all duration-300">
-                                                    <span className="bg-white text-black px-4 py-2 rounded-full font-bold opacity-0 group-hover:opacity-100 shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                                                        Open Newspaper
-                                                    </span>
-                                                </div>
-                                            )}
+                                            <div className="absolute top-4 right-4 md:top-6 md:right-6">
+                                                {isCached ? (
+                                                    <div className="bg-green-600 text-white p-2 rounded-full shadow-lg" title="Saved for Offline">
+                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                                    </div>
+                                                ) : (
+                                                    <div className="bg-amber-500/80 backdrop-blur-md text-white p-2 rounded-full shadow-lg" title="Cloud Access Only">
+                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" /></svg>
+                                                    </div>
+                                                )}
+                                            </div>
 
                                             {!isAvailable && (
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4 text-center">
-                                                    <span className="text-white text-xs font-black uppercase tracking-widest bg-black/60 px-3 py-2 rounded-lg backdrop-blur-sm">
-                                                        Not Available Offline
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {isCached && (
-                                                <div className="absolute top-2 right-2 bg-green-500 text-white p-1 rounded-full shadow-lg" title="Available Offline">
-                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                                                    </svg>
+                                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6 text-center">
+                                                    <span className="text-white text-[10px] font-black uppercase tracking-widest leading-relaxed">Please connect to internet to read</span>
                                                 </div>
                                             )}
                                         </Link>
-                                        <div className="p-4 flex-1 flex flex-col">
-                                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">{doc.title}</h3>
 
-                                            <div className="mt-4 flex flex-col gap-2">
+                                        <div className="p-6 md:p-8 flex-1 flex flex-col bg-white/30 border-t border-white/40">
+                                            <h3 className="text-xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-sans group-hover:text-[#be1e2d] transition-colors truncate">{doc.title}</h3>
+
+                                            <div className="mt-6 flex flex-col gap-3">
                                                 <Link
                                                     href={isAvailable ? route('documents.reader', doc.id) : '#'}
-                                                    className={`block w-full text-center px-4 py-2 rounded-md transition font-bold ${isAvailable ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+                                                    className={`w-full text-center py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-md ${isAvailable ? 'bg-[#1a1a1a] text-white hover:bg-[#be1e2d] active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
                                                     onClick={(e) => !isAvailable && e.preventDefault()}
                                                 >
                                                     {isAvailable ? 'Read Now' : 'Offline'}
                                                 </Link>
 
-                                                {!isCached && !isAppOffline ? (
+                                                {!isCached && !isAppOffline && (
                                                     <button
-                                                        onClick={() => saveForOffline(doc)}
+                                                        onClick={(e) => saveForOffline(e, doc)}
                                                         disabled={caching === doc.id}
-                                                        className="block w-full text-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm font-bold"
+                                                        className="w-full bg-[#ffde00] text-black py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-black hover:text-[#ffde00] transition-all active:scale-95 flex items-center justify-center gap-2"
                                                     >
-                                                        {caching === doc.id ? (
-                                                            <span className="flex items-center justify-center gap-2">
-                                                                <svg className="animate-spin h-4 w-4 text-indigo-500" viewBox="0 0 24 24">
-                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                </svg>
-                                                                Saving...
-                                                            </span>
-                                                        ) : (
-                                                            '💾 Save for Offline'
-                                                        )}
+                                                        {caching === doc.id ? '💾 Saving...' : '💾 Save Offline'}
                                                     </button>
-                                                ) : isCached ? (
-                                                    <div className="text-center py-2 text-xs font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded">
-                                                        ✓ Available in App Library
-                                                    </div>
-                                                ) : null}
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -193,18 +231,65 @@ export default function Index({ auth, documents }) {
                             })}
                         </div>
                     ) : (
-                        <div className="bg-white dark:bg-gray-800 p-12 text-center rounded-lg shadow">
-                            <svg className="w-20 h-20 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Your Library is Empty</h3>
-                            <p className="mt-2 text-gray-600 dark:text-gray-400">Purchase a newspaper to see it here.</p>
-                            <Link
-                                href={route('documents.index')}
-                                className="mt-8 inline-block px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-bold"
-                            >
-                                Browse Newspapers
-                            </Link>
+                        <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+                            {filteredDocuments.map((doc) => {
+                                const isCached = offlineDocs.includes(doc.id);
+                                const isAvailable = !isAppOffline || isCached;
+
+                                return (
+                                    <Link
+                                        key={doc.id}
+                                        href={isAvailable ? route('documents.reader', doc.id) : '#'}
+                                        onClick={(e) => !isAvailable && e.preventDefault()}
+                                        className={`group bg-white/70 backdrop-blur-2xl border border-white/40 shadow-xl rounded-3xl overflow-hidden transition-all flex h-32 md:h-40 ${!isAvailable ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-2xl'}`}
+                                    >
+                                        <div className="w-24 md:w-40 h-full bg-[#f4f1ea] relative shrink-0">
+                                            {doc.thumbnail_path ? (
+                                                <img src={`/storage/${doc.thumbnail_path}`} alt={doc.title} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-black/10"><svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg></div>
+                                            )}
+                                            {isCached && (
+                                                <div className="absolute inset-0 bg-green-600/20 flex items-center justify-center">
+                                                    <div className="bg-green-600 text-white p-1 rounded-full"><svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" /></svg></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 p-5 md:p-8 flex items-center justify-between gap-6">
+                                            <div className="min-w-0">
+                                                <h3 className="text-lg md:text-2xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-sans line-clamp-1 group-hover:text-[#be1e2d] transition-colors">{doc.title}</h3>
+                                                <div className="mt-2 flex items-center gap-3">
+                                                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-gray-400">Archived Collection</span>
+                                                    {!isCached && isAppOffline && (
+                                                        <span className="text-[8px] font-black uppercase text-[#be1e2d]">Requires Connection</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                                                {!isCached && !isAppOffline && (
+                                                    <button onClick={(e) => saveForOffline(e, doc)} disabled={caching === doc.id} className="p-3 bg-gray-100 rounded-xl hover:bg-[#ffde00] transition-all">
+                                                        <svg className={`w-4 h-4 ${caching === doc.id ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                                    </button>
+                                                )}
+                                                <span className="p-3 bg-black text-white rounded-xl group-hover:bg-[#be1e2d] transition-all">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {documents.length === 0 && (
+                        <div className="bg-white/40 backdrop-blur-xl border border-white/40 p-16 md:p-32 text-center rounded-[3rem] shadow-2xl">
+                            <div className="w-24 h-24 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-8">
+                                <svg className="w-12 h-12 text-black/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                            </div>
+                            <h3 className="text-3xl md:text-5xl font-black text-black/10 uppercase tracking-tighter italic font-sans italic">Your Library is Empty</h3>
+                            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-black/30 max-w-sm mx-auto leading-relaxed px-4">Unlock premium editions from our global archive to build your collection.</p>
+                            <Link href={route('documents.index')} className="mt-12 inline-block px-12 py-5 bg-[#be1e2d] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-red-500/30 hover:-translate-y-1 active:scale-95 transition-all">Explore Newsstand</Link>
                         </div>
                     )}
                 </div>
