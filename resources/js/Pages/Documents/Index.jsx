@@ -167,8 +167,13 @@ export default function Index({ auth, documents }) {
                                             alt={doc.title}
                                             className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
                                             onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = '/images/placeholder-cover.png'; // Fallback to local placeholder if all else fails
+                                                const page1Url = route('documents.page', { document: doc.id, page: 1 });
+                                                if (e.target.src !== page1Url) {
+                                                    e.target.src = page1Url;
+                                                } else {
+                                                    e.target.onerror = null;
+                                                    e.target.src = '/images/placeholder-cover.png';
+                                                }
                                             }}
                                         />
 
@@ -217,8 +222,13 @@ export default function Index({ auth, documents }) {
                                             alt={doc.title}
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                             onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = '/images/placeholder-cover.png';
+                                                const page1Url = route('documents.page', { document: doc.id, page: 1 });
+                                                if (e.target.src !== page1Url) {
+                                                    e.target.src = page1Url;
+                                                } else {
+                                                    e.target.onerror = null;
+                                                    e.target.src = '/images/placeholder-cover.png';
+                                                }
                                             }}
                                         />
                                         <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition duration-500"></div>
