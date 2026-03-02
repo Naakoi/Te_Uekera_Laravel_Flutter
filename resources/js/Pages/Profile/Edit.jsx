@@ -5,7 +5,7 @@ import UpdateProfileInformationForm from './Partials/UpdateProfileInformationFor
 import LogoutOtherDevicesForm from './Partials/LogoutOtherDevicesForm';
 import { Head } from '@inertiajs/react';
 
-export default function Edit({ auth, mustVerifyEmail, status }) {
+export default function Edit({ auth, mustVerifyEmail, status, sessions, tokens }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -28,7 +28,12 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                     </div>
 
                     <div className="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                        <LogoutOtherDevicesForm className="max-w-xl" status={status} />
+                        <LogoutOtherDevicesForm
+                            className="max-w-xl"
+                            status={status}
+                            sessions={sessions}
+                            tokens={tokens}
+                        />
                     </div>
 
                     <div className="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">

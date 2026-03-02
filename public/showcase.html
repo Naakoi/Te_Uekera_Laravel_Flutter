@@ -1370,6 +1370,7 @@
                 <a href="#arch">Architecture</a>
                 <a href="#features">Features</a>
                 <a href="#onboarding">Access</a>
+                <a href="#security">Security</a>
                 <a href="#mobile">Mobile</a>
                 <a href="#roles">Roles</a>
             </div>
@@ -1445,7 +1446,7 @@
         <div class="pill-nav">
             <a href="#tech" class="pill">🛠 Tech Stack</a>
             <a href="#arch" class="pill">🏗 Architecture</a>
-            <a href="#features" class="pill">⚡ Features</a>
+            <a href="#onboarding" class="pill">🔑 Access & Signup</a>
             <a href="#onboarding" class="pill">� Access & Signup</a>
             <a href="#mobile" class="pill">📱 Mobile App</a>
             <a href="#roles" class="pill">👥 User Roles</a>
@@ -1877,205 +1878,293 @@
                 </div>
             </div>
         </div>
-    </section>
+        <!-- SECURITY & REMOTE LOGOUT -->
+        <section id="security" style="background: #0d0d0d; border-top: 1px solid rgba(190, 30, 45, .1);">
+            <div class="section-inner">
+                <div class="section-eyebrow">Universal Security</div>
+                <h2 class="section-title">One Device Policy</h2>
+                <p class="section-sub">A premium "one device only" security model. If a user is logged in on one device
+                    (web or mobile), attempts to log in elsewhere are intercepted with a secure conflict resolution
+                    screen.</p>
 
-    <!-- MOBILE -->
-    <section id="mobile">
-        <div class="section-inner">
-            <div class="section-eyebrow">Mobile App</div>
-            <h2 class="section-title">Flutter — Built to Impress</h2>
-            <div class="mobile-layout">
-                <div>
-                    <p class="section-sub" style="margin-bottom:32px;">The Flutter mobile app mirrors the premium
-                        editorial aesthetic of the web platform. Ten dedicated pages, BLoC state management, and clean
-                        repository architecture.</p>
-                    <div class="features-grid" style="grid-template-columns:1fr;gap:14px;">
-                        <div class="feature-card" style="padding:20px 24px;">
-                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">🏠
-                            </div>
-                            <div class="feature-body">
-                                <div class="feature-title" style="font-size:14px;">Home Page</div>
-                                <div class="feature-desc" style="font-size:12px;">Editorial landing with masthead, issue
-                                    bar, hero headline, and feature cards.</div>
-                            </div>
-                        </div>
-                        <div class="feature-card" style="padding:20px 24px;">
-                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">📰
-                            </div>
-                            <div class="feature-body">
-                                <div class="feature-title" style="font-size:14px;">Document List</div>
-                                <div class="feature-desc" style="font-size:12px;">Browsable, sortable, searchable
-                                    grid/list of all newspaper editions.</div>
-                            </div>
-                        </div>
-                        <div class="feature-card" style="padding:20px 24px;">
-                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">🔍
-                            </div>
-                            <div class="feature-body">
-                                <div class="feature-title" style="font-size:14px;">Document Details & Purchase</div>
-                                <div class="feature-desc" style="font-size:12px;">Full detail view with buy, redeem, and
-                                    read actions. Auth-gated purchasing flow.</div>
-                            </div>
-                        </div>
-                        <div class="feature-card" style="padding:20px 24px;">
-                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">📚
-                            </div>
-                            <div class="feature-body">
-                                <div class="feature-title" style="font-size:14px;">Library & Document Viewer</div>
-                                <div class="feature-desc" style="font-size:12px;">All purchased editions in a responsive
-                                    library. Page-by-page secure reader with no PDF exposure.</div>
-                            </div>
-                        </div>
-                        <div class="feature-card" style="padding:20px 24px;">
-                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">🗃️
-                            </div>
-                            <div class="feature-body">
-                                <div class="feature-title" style="font-size:14px;">SQLite Offline Cache</div>
-                                <div class="feature-desc" style="font-size:12px;">Document list & download status
-                                    persisted in a local SQLite DB. Green <em>OFFLINE</em> badge when pages are cached.
+                <div class="arch-grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+                    <!-- CONFLICT RESOLUTION MOCKUP -->
+                    <div class="step-card"
+                        style="border-color: rgba(190, 30, 45, .3); background: rgba(190, 30, 45, .02);">
+                        <div
+                            style="font-size: 10px; font-weight: 900; color: var(--red); margin-bottom: 20px; text-transform: uppercase; letter-spacing: .2em;">
+                            Case: Login Conflict</div>
+                        <h3 class="feature-title">Smart Interception</h3>
+                        <p class="feature-desc">Detected active sessions on other devices trigger a high-visibility
+                            warning before allowing access.</p>
+
+                        <div class="step-mockup" style="border: 1px solid #ffcfcf; background: #fff;">
+                            <div
+                                style="background: #fef2f2; border: 1px solid #fee2e2; padding: 12px; border-radius: 12px; margin-bottom: 15px;">
+                                <div
+                                    style="font-size: 8px; font-weight: 900; color: #b91c1c; text-transform: uppercase; margin-bottom: 4px; text-align: center;">
+                                    Account active on another device</div>
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <div
+                                        style="width: 10px; height: 10px; border: 1px solid #b91c1c; border-radius: 2px;">
+                                    </div>
+                                    <div
+                                        style="font-size: 7px; font-weight: 900; color: #b91c1c; text-transform: uppercase;">
+                                        Sign out all other devices</div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="feature-card" style="padding:20px 24px;">
-                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">📡
-                            </div>
-                            <div class="feature-body">
-                                <div class="feature-title" style="font-size:14px;">Remote Sign-Out</div>
-                                <div class="feature-desc" style="font-size:12px;">Sign out from all other sessions
-                                    remotely
-                                    via the profile page — works across web & mobile simultaneously.</div>
-                            </div>
+                            <div class="mock-btn"
+                                style="width: 100%; height: 20px; background: #b91c1c; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; font-weight: 900;">
+                                SIGN OUT & LOG IN</div>
                         </div>
                     </div>
-                </div>
-                <div>
-                    <div class="phone-frame">
-                        <div class="phone-notch"></div>
-                        <div class="phone-screen">
-                            <div class="ps-header">
-                                <div class="ps-header-title">TE UEKERA</div>
-                                <div class="ps-issuebar"><span>Issue #1</span><span>2026</span><span>$1.00</span></div>
+
+                    <!-- REMOTE LOGOUT MOCKUP -->
+                    <div class="step-card"
+                        style="border-color: rgba(30, 58, 138, .3); background: rgba(30, 58, 138, .02);">
+                        <div
+                            style="font-size: 10px; font-weight: 900; color: var(--navy); margin-bottom: 20px; text-transform: uppercase; letter-spacing: .2em;">
+                            Case: Remote Control</div>
+                        <h3 class="feature-title">Session Revocation</h3>
+                        <p class="feature-desc">Users can view and terminate active sessions across both web and mobile
+                            instantly from their profile settings.</p>
+
+                        <div class="step-mockup" style="background: #fff; padding: 15px;">
+                            <div
+                                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                                <div style="font-size: 9px; font-weight: 900;">Active Sessions</div>
+                                <div style="font-size: 7px; color: #22c55e; font-weight: 900;">ONLINE</div>
                             </div>
-                            <div class="ps-body">
-                                <span class="ps-pill">HEADLINE NEWS</span>
-                                <div class="ps-headline">THE FUTURE OF NEWS,<br />DIGITALLY SECURED WORLD</div>
-                                <div class="ps-quote">Access the latest editions from anywhere in the world.</div>
-                                <div class="ps-btn">BROWSE EDITIONS</div>
-                                <div class="ps-cards">
-                                    <div class="ps-card c1">
-                                        <div class="ps-card-t">Pay Per View</div>
-                                        <div class="ps-card-b">Only pay for what you read.</div>
-                                    </div>
-                                    <div class="ps-card c2">
-                                        <div class="ps-card-t">Secure Access</div>
-                                        <div class="ps-card-b">Documents stay protected.</div>
-                                    </div>
-                                    <div class="ps-card c3">
-                                        <div class="ps-card-t">Mobile App</div>
-                                        <div class="ps-card-b">Read offline, anywhere.</div>
-                                    </div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                <div style="font-size: 14px;">📱</div>
+                                <div style="text-align: left;">
+                                    <div style="font-size: 8px; font-weight: 900;">Mobile App (Sanctum)</div>
+                                    <div style="font-size: 6px; color: #888;">Active in Betio, Tarawa</div>
                                 </div>
                             </div>
-                            <div class="ps-navbar">
-                                <div class="ps-nav-icon">🏠</div>
-                                <div class="ps-nav-icon active">📰</div>
-                                <div class="ps-nav-icon">📚</div>
-                                <div class="ps-nav-icon">👤</div>
-                            </div>
+                            <div class="mock-btn"
+                                style="width: 100%; height: 20px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; font-weight: 900;">
+                                REMOTE SIGN OUT ALL</div>
                         </div>
-                    </div>
-                </div>
-                <div class="download-grid">
-                    <div class="qr-card">
-                        <div class="qr-image">
-                            <img src="assets/qr/android_qr.png?v=beta2" alt="Android QR Code">
-                        </div>
-                        <div class="qr-label">Android App</div>
-                        <div class="qr-sub">Scan to download APK</div>
-                        <a href="downloads/te_uekera_beta.apk" class="btn-primary"
-                            style="margin-top: 16px; width: 100%; text-align: center; font-size: 11px;">Direct
-                            Download</a>
-                    </div>
-                    <div class="qr-card">
-                        <div class="qr-image">
-                            <img src="assets/qr/ios_qr.png?v=beta2" alt="iOS QR Code">
-                        </div>
-                        <div class="qr-label">iOS App</div>
-                        <div class="qr-sub">Scan to download</div>
                     </div>
                 </div>
             </div>
-    </section>
+        </section>
 
-    <!-- ROLES -->
-    <section id="roles" style="background:rgba(255,255,255,.02);">
-        <div class="section-inner">
-            <div class="section-eyebrow">User Roles</div>
-            <h2 class="section-title">Role-Based Access Control</h2>
-            <p class="section-sub">Three distinct roles, each with carefully scoped permissions enforced by middleware
-                on every route.</p>
-            <div class="roles-grid">
-                <div class="role-card admin">
-                    <div class="role-emoji">👑</div>
-                    <div class="role-name">Admin</div>
-                    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Full system control</div>
-                    <ul class="role-perms">
-                        <li>Manage staff accounts & permissions</li>
-                        <li>Create & configure gateway settings</li>
-                        <li>Manage subscription plans</li>
-                        <li>Access all staff features</li>
-                        <li>Admin dashboard overview</li>
-                    </ul>
-                </div>
-                <div class="role-card staff">
-                    <div class="role-emoji">🗞️</div>
-                    <div class="role-name">Staff</div>
-                    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Content & code management
+
+        <!-- MOBILE -->
+        <section id="mobile">
+            <div class="section-inner">
+                <div class="section-eyebrow">Mobile App</div>
+                <h2 class="section-title">Flutter — Built to Impress</h2>
+                <div class="mobile-layout">
+                    <div>
+                        <p class="section-sub" style="margin-bottom:32px;">The Flutter mobile app mirrors the premium
+                            editorial aesthetic of the web platform. Ten dedicated pages, BLoC state management, and
+                            clean
+                            repository architecture.</p>
+                        <div class="features-grid" style="grid-template-columns:1fr;gap:14px;">
+                            <div class="feature-card" style="padding:20px 24px;">
+                                <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">
+                                    🏠
+                                </div>
+                                <div class="feature-body">
+                                    <div class="feature-title" style="font-size:14px;">Home Page</div>
+                                    <div class="feature-desc" style="font-size:12px;">Editorial landing with masthead,
+                                        issue
+                                        bar, hero headline, and feature cards.</div>
+                                </div>
+                            </div>
+                            <div class="feature-card" style="padding:20px 24px;">
+                                <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">
+                                    📰
+                                </div>
+                                <div class="feature-body">
+                                    <div class="feature-title" style="font-size:14px;">Document List</div>
+                                    <div class="feature-desc" style="font-size:12px;">Browsable, sortable, searchable
+                                        grid/list of all newspaper editions.</div>
+                                </div>
+                            </div>
+                            <div class="feature-card" style="padding:20px 24px;">
+                                <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">
+                                    🔍
+                                </div>
+                                <div class="feature-body">
+                                    <div class="feature-title" style="font-size:14px;">Document Details & Purchase</div>
+                                    <div class="feature-desc" style="font-size:12px;">Full detail view with buy, redeem,
+                                        and
+                                        read actions. Auth-gated purchasing flow.</div>
+                                </div>
+                            </div>
+                            <div class="feature-card" style="padding:20px 24px;">
+                                <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">
+                                    📚
+                                </div>
+                                <div class="feature-body">
+                                    <div class="feature-title" style="font-size:14px;">Library & Document Viewer</div>
+                                    <div class="feature-desc" style="font-size:12px;">All purchased editions in a
+                                        responsive
+                                        library. Page-by-page secure reader with no PDF exposure.</div>
+                                </div>
+                            </div>
+                            <div class="feature-card" style="padding:20px 24px;">
+                                <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">
+                                    🗃️
+                                </div>
+                                <div class="feature-body">
+                                    <div class="feature-title" style="font-size:14px;">SQLite Offline Cache</div>
+                                    <div class="feature-desc" style="font-size:12px;">Document list & download status
+                                        persisted in a local SQLite DB. Green <em>OFFLINE</em> badge when pages are
+                                        cached.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="feature-card" style="padding:20px 24px;">
+                                <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">
+                                    📡
+                                </div>
+                                <div class="feature-body">
+                                    <div class="feature-title" style="font-size:14px;">Remote Sign-Out</div>
+                                    <div class="feature-desc" style="font-size:12px;">Sign out from all other sessions
+                                        remotely
+                                        via the profile page — works across web & mobile simultaneously.</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <ul class="role-perms">
-                        <li>Upload & publish documents (if permitted)</li>
-                        <li>Generate payment & redeem codes</li>
-                        <li>View & reset user passwords</li>
-                        <li>Manage redeem codes</li>
-                        <li>Staff dashboard</li>
-                    </ul>
+                    <div>
+                        <div class="phone-frame">
+                            <div class="phone-notch"></div>
+                            <div class="phone-screen">
+                                <div class="ps-header">
+                                    <div class="ps-header-title">TE UEKERA</div>
+                                    <div class="ps-issuebar"><span>Issue #1</span><span>2026</span><span>$1.00</span>
+                                    </div>
+                                </div>
+                                <div class="ps-body">
+                                    <span class="ps-pill">HEADLINE NEWS</span>
+                                    <div class="ps-headline">THE FUTURE OF NEWS,<br />DIGITALLY SECURED WORLD</div>
+                                    <div class="ps-quote">Access the latest editions from anywhere in the world.</div>
+                                    <div class="ps-btn">BROWSE EDITIONS</div>
+                                    <div class="ps-cards">
+                                        <div class="ps-card c1">
+                                            <div class="ps-card-t">Pay Per View</div>
+                                            <div class="ps-card-b">Only pay for what you read.</div>
+                                        </div>
+                                        <div class="ps-card c2">
+                                            <div class="ps-card-t">Secure Access</div>
+                                            <div class="ps-card-b">Documents stay protected.</div>
+                                        </div>
+                                        <div class="ps-card c3">
+                                            <div class="ps-card-t">Mobile App</div>
+                                            <div class="ps-card-b">Read offline, anywhere.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ps-navbar">
+                                    <div class="ps-nav-icon">🏠</div>
+                                    <div class="ps-nav-icon active">📰</div>
+                                    <div class="ps-nav-icon">📚</div>
+                                    <div class="ps-nav-icon">👤</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="download-grid">
+                        <div class="qr-card">
+                            <div class="qr-image">
+                                <img src="assets/qr/android_qr.png?v=beta2" alt="Android QR Code">
+                            </div>
+                            <div class="qr-label">Android App</div>
+                            <div class="qr-sub">Scan to download APK</div>
+                            <a href="downloads/te_uekera_beta.apk" class="btn-primary"
+                                style="margin-top: 16px; width: 100%; text-align: center; font-size: 11px;">Direct
+                                Download</a>
+                        </div>
+                        <div class="qr-card">
+                            <div class="qr-image">
+                                <img src="assets/qr/ios_qr.png?v=beta2" alt="iOS QR Code">
+                            </div>
+                            <div class="qr-label">iOS App</div>
+                            <div class="qr-sub">Scan to download</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="role-card client">
-                    <div class="role-emoji">📖</div>
-                    <div class="role-name">Client</div>
-                    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Reader & subscriber</div>
-                    <ul class="role-perms">
-                        <li>Browse all published editions</li>
-                        <li>Purchase documents (Stripe / PayPal)</li>
-                        <li>Redeem voucher codes</li>
-                        <li>Read purchased documents</li>
-                        <li>Manage profile & library</li>
-                    </ul>
+        </section>
+
+        <!-- ROLES -->
+        <section id="roles" style="background:rgba(255,255,255,.02);">
+            <div class="section-inner">
+                <div class="section-eyebrow">User Roles</div>
+                <h2 class="section-title">Role-Based Access Control</h2>
+                <p class="section-sub">Three distinct roles, each with carefully scoped permissions enforced by
+                    middleware
+                    on every route.</p>
+                <div class="roles-grid">
+                    <div class="role-card admin">
+                        <div class="role-emoji">👑</div>
+                        <div class="role-name">Admin</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Full system control
+                        </div>
+                        <ul class="role-perms">
+                            <li>Manage staff accounts & permissions</li>
+                            <li>Create & configure gateway settings</li>
+                            <li>Manage subscription plans</li>
+                            <li>Access all staff features</li>
+                            <li>Admin dashboard overview</li>
+                        </ul>
+                    </div>
+                    <div class="role-card staff">
+                        <div class="role-emoji">🗞️</div>
+                        <div class="role-name">Staff</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Content & code
+                            management
+                        </div>
+                        <ul class="role-perms">
+                            <li>Upload & publish documents (if permitted)</li>
+                            <li>Generate payment & redeem codes</li>
+                            <li>View & reset user passwords</li>
+                            <li>Manage redeem codes</li>
+                            <li>Staff dashboard</li>
+                        </ul>
+                    </div>
+                    <div class="role-card client">
+                        <div class="role-emoji">📖</div>
+                        <div class="role-name">Client</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">Reader & subscriber
+                        </div>
+                        <ul class="role-perms">
+                            <li>Browse all published editions</li>
+                            <li>Purchase documents (Stripe / PayPal)</li>
+                            <li>Redeem voucher codes</li>
+                            <li>Read purchased documents</li>
+                            <li>Manage profile & library</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- FOOTER -->
-    <footer>
-        <div class="footer-logo">Te Uekera</div>
-        <div class="footer-sub">Ana Nuutibeeba ni koaua te I-Kiribati</div>
-        <div class="footer-tags">
-            <span class="footer-tag">Laravel 12</span>
-            <span class="footer-tag">React + InertiaJS</span>
-            <span class="footer-tag">Flutter</span>
-            <span class="footer-tag">Sanctum</span>
-            <span class="footer-tag">Stripe</span>
-            <span class="footer-tag">PayPal</span>
-            <span class="footer-tag">MySQL</span>
-            <span class="footer-tag">SQLite</span>
-            <span class="footer-tag">Ghostscript</span>
-            <span class="footer-tag">BLoC</span>
-            <span class="footer-tag">Cloudways</span>
-            <span class="footer-tag">Offline-First</span>
-        </div>
-        <div class="footer-copy">© 2026 Te Uekera Digital — Showcase Page</div>
-    </footer>
+        <!-- FOOTER -->
+        <footer>
+            <div class="footer-logo">Te Uekera</div>
+            <div class="footer-sub">Ana Nuutibeeba ni koaua te I-Kiribati</div>
+            <div class="footer-tags">
+                <span class="footer-tag">Laravel 12</span>
+                <span class="footer-tag">React + InertiaJS</span>
+                <span class="footer-tag">Flutter</span>
+                <span class="footer-tag">Sanctum</span>
+                <span class="footer-tag">Stripe</span>
+                <span class="footer-tag">PayPal</span>
+                <span class="footer-tag">MySQL</span>
+                <span class="footer-tag">SQLite</span>
+                <span class="footer-tag">Ghostscript</span>
+                <span class="footer-tag">BLoC</span>
+                <span class="footer-tag">Cloudways</span>
+                <span class="footer-tag">Offline-First</span>
+            </div>
+            <div class="footer-copy">© 2026 Te Uekera Digital — Showcase Page</div>
+        </footer>
 
 </body>
 

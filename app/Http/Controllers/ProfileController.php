@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
+use Stevebauman\Location\Facades\Location;
 
 class ProfileController extends Controller
 {
@@ -20,8 +22,55 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
+        $sessions = collect([]);
+        if (config('session.driver') === 'database') {
+            $sessions = DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->orderBy('last_activity', 'desc')
+                ->get()
+                ->map(function ($session) use ($request) {
+                    $location = cache()->remember('ip_location_' . $session->ip_address, now()->addDay(), function () use ($session) {
+                        try {
+                            if ($session->ip_address === '127.0.0.1' || $session->ip_address === '::1') {
+                                return 'Local Dev Device';
+                            }
+                            
+                            $info = Location::get($session->ip_address);
+                            if ($info && $info->cityName && $info->countryName) {
+                                return $info->cityName . ', ' . $info->countryName;
+                            }
+                            return 'Unknown Location';
+                        } catch (\Exception $e) {
+                            return 'Unknown';
+                        }
+                    });
+
+                    return (object) [
+                        'id' => $session->id,
+                        'ip_address' => $session->ip_address,
+                        'location' => $location,
+                        'is_current_device' => $session->id === $request->session()->getId(),
+                        'agent' => $session->user_agent,
+                        'last_active' => Carbon::createFromTimestamp($session->last_activity)->diffForHumans(),
+                    ];
+                });
+        }
+
+        $tokens = $user->tokens->map(function ($token) {
+            return (object) [
+                'id' => $token->id,
+                'name' => $token->name,
+                'last_used_at' => $token->last_used_at ? $token->last_used_at->diffForHumans() : 'Never',
+                'is_mobile' => true,
+            ];
+        });
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
+            'sessions' => $sessions,
+            'tokens' => $tokens,
             'status' => session('status'),
         ]);
     }
