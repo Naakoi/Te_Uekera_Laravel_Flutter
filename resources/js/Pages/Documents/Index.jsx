@@ -31,6 +31,10 @@ export default function Index({ auth, documents }) {
                 return new Date(a.created_at) - new Date(b.created_at);
             } else if (sortBy === 'alphabetical') {
                 return a.title.localeCompare(b.title);
+            } else if (sortBy === 'price-low') {
+                return parseFloat(a.price) - parseFloat(b.price);
+            } else if (sortBy === 'price-high') {
+                return parseFloat(b.price) - parseFloat(a.price);
             }
             return 0;
         });
@@ -96,8 +100,8 @@ export default function Index({ auth, documents }) {
                                             key={f}
                                             onClick={() => setFilterStatus(f)}
                                             className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterStatus === f
-                                                    ? 'bg-white text-[#be1e2d] shadow-sm'
-                                                    : 'text-gray-500 hover:text-black'
+                                                ? 'bg-white text-[#be1e2d] shadow-sm'
+                                                : 'text-gray-500 hover:text-black'
                                                 }`}
                                         >
                                             {f}
@@ -113,16 +117,19 @@ export default function Index({ auth, documents }) {
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value)}
                                 >
-                                    <option value="newest">Newest</option>
-                                    <option value="oldest">Oldest</option>
-                                    <option value="alphabetical">A-Z</option>
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="alphabetical">Title (A-Z)</option>
+                                    <option value="price-low">Price: Low to High</option>
+                                    <option value="price-high">Price: High to Low</option>
                                 </select>
 
                                 {/* View Toggle */}
                                 <div className="flex bg-white p-1 rounded-xl shadow-sm border border-black/5">
                                     <button
                                         onClick={() => setIsGridView(true)}
-                                        className={`p-2 rounded-lg transition-all ${isGridView ? 'bg-[#be1e2d]/10 text-[#be1e2d]' : 'text-gray-300'}`}
+                                        className={`p-2 rounded-lg transition-all ${isGridView ? 'bg-[#be1e2d]/10 text-[#be1e2d]' : 'text-gray-300 hover:text-gray-600'}`}
+                                        title="Grid View"
                                     >
                                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -130,7 +137,8 @@ export default function Index({ auth, documents }) {
                                     </button>
                                     <button
                                         onClick={() => setIsGridView(false)}
-                                        className={`p-2 rounded-lg transition-all ${!isGridView ? 'bg-[#be1e2d]/10 text-[#be1e2d]' : 'text-gray-300'}`}
+                                        className={`p-2 rounded-lg transition-all ${!isGridView ? 'bg-[#be1e2d]/10 text-[#be1e2d]' : 'text-gray-300 hover:text-gray-600'}`}
+                                        title="List View"
                                     >
                                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
@@ -154,20 +162,15 @@ export default function Index({ auth, documents }) {
                                 <div key={doc.id} className="group bg-white/70 backdrop-blur-2xl border border-white/40 shadow-xl hover:shadow-[0_32px_64px_-15px_rgba(0,0,0,0.2)] rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden transition-all hover:-translate-y-2 flex flex-col h-full relative">
                                     <Link href={route((auth.user.role === 'staff' || auth.user.role === 'admin' || doc.has_access) ? 'documents.reader' : 'documents.show', doc.id)} className="block aspect-[3/4] overflow-hidden bg-[#f4f1ea] relative">
                                         <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition duration-500"></div>
-                                        {doc.thumbnail_path ? (
-                                            <img
-                                                src={`/storage/${doc.thumbnail_path}`}
-                                                alt={doc.title}
-                                                className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex flex-col items-center justify-center text-black/20 p-8 text-center">
-                                                <svg className="w-16 md:w-24 h-16 md:h-24 mb-4 md:mb-6 transition-transform group-hover:rotate-12 group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                                </svg>
-                                                <span className="text-[10px] uppercase font-black tracking-[0.3em]">Cover Pending Archive</span>
-                                            </div>
-                                        )}
+                                        <img
+                                            src={doc.thumbnail_path ? `/storage/${doc.thumbnail_path}` : route('documents.page', { document: doc.id, page: 1 })}
+                                            alt={doc.title}
+                                            className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/images/placeholder-cover.png'; // Fallback to local placeholder if all else fails
+                                            }}
+                                        />
 
                                         {/* Status Badges */}
                                         <div className="absolute top-4 left-4 md:top-6 md:left-6 flex flex-col gap-2">
@@ -209,17 +212,15 @@ export default function Index({ auth, documents }) {
                                     className="group bg-white/70 backdrop-blur-2xl border border-white/40 shadow-xl hover:shadow-2xl rounded-3xl overflow-hidden transition-all flex h-40 md:h-52"
                                 >
                                     <div className="w-32 md:w-52 h-full relative overflow-hidden bg-[#f4f1ea] shrink-0">
-                                        {doc.thumbnail_path ? (
-                                            <img
-                                                src={`/storage/${doc.thumbnail_path}`}
-                                                alt={doc.title}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-black/20">
-                                                <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
-                                            </div>
-                                        )}
+                                        <img
+                                            src={doc.thumbnail_path ? `/storage/${doc.thumbnail_path}` : route('documents.page', { document: doc.id, page: 1 })}
+                                            alt={doc.title}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/images/placeholder-cover.png';
+                                            }}
+                                        />
                                         <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition duration-500"></div>
                                     </div>
                                     <div className="flex-1 p-5 md:p-8 flex flex-col justify-between">

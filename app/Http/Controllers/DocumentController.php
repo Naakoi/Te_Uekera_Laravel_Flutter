@@ -187,7 +187,7 @@ class DocumentController extends Controller
     public function pageImage(Document $document, int $page)
     {
         Log::info("pageImage request for doc {$document->id}, page $page");
-        if (!$this->hasAccess($document)) {
+        if ($page !== 1 && !$this->hasAccess($document)) {
             Log::warning("Access denied for doc {$document->id}, page $page");
             abort(403);
         }

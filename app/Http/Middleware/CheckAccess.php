@@ -30,6 +30,11 @@ class CheckAccess
             return $next($request);
         }
 
+        // Allow access to page 1 for anyone (covers for shop view)
+        if ($request->routeIs('documents.page') && $request->route('page') == 1) {
+            return $next($request);
+        }
+
         // Check for active subscription
         if ($user->hasActiveSubscription()) {
             return $next($request);
