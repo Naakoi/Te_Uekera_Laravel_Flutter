@@ -32,7 +32,8 @@ class DocumentController extends Controller
         $documents = $documents->map(function ($doc) use ($globalActivated) {
             $doc->has_access = $globalActivated || $this->hasAccess($doc);
             if (!$doc->page_count) {
-                $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
+                $pdfPath = $this->getAbsolutePdfPath($doc->file_path);
+                $doc->page_count = $pdfPath ? $this->countPdfPages($pdfPath) : 0;
                 try {
                     $doc->save();
                 } catch (\Exception $e) {
@@ -80,7 +81,8 @@ class DocumentController extends Controller
             $data = $documents->map(function ($doc) use ($globalActivated, $user) {
                 // Ensure page_count is populated
                 if (!$doc->page_count) {
-                    $doc->page_count = $this->countPdfPages(storage_path('app/' . $doc->file_path));
+                    $pdfPath = $this->getAbsolutePdfPath($doc->file_path);
+                    $doc->page_count = $pdfPath ? $this->countPdfPages($pdfPath) : 0;
                     try {
                         $doc->save();
                     } catch (\Exception $e) {
@@ -168,11 +170,10 @@ class DocumentController extends Controller
 
         if (!file_exists($fullPath)) {
             // Pre-generated file doesn't exist — generate on-the-fly via Imagick.
-            // This handles newly-uploaded documents on environments where exec() is disabled (e.g. Cloudways).
-            $pdfPath = storage_path('app/' . $document->file_path);
+            $pdfPath = $this->getAbsolutePdfPath($document->file_path);
 
-            if (!file_exists($pdfPath)) {
-                Log::error("PDF source file missing for doc {$document->id}: {$pdfPath}");
+            if (!$pdfPath) {
+                Log::error("PDF source file missing for doc {$document->id}: looking in app/ and app/public/");
                 return $this->placeholderPngResponse("PDF not found");
             }
 
@@ -467,6 +468,23 @@ class DocumentController extends Controller
         abort(403, 'Downloading is disabled. Documents can only be viewed within the library.');
     }
 
+    /**
+     * Tries to find the absolute path of a PDF on available disks.
+     */
+    private function getAbsolutePdfPath($filePath)
+    {
+        $diskPaths = [
+            storage_path('app/' . $filePath),
+            storage_path('app/public/' . $filePath),
+        ];
+
+        foreach ($diskPaths as $path) {
+            if (file_exists($path)) return $path;
+        }
+
+        return null;
+    }
+
     private function countPdfPages($path)
     {
         try {
@@ -474,59 +492,45 @@ class DocumentController extends Controller
                 return 0;
             }
 
-            // 1. Use Imagick if available (most accurate, no exec needed)
+            // 1. Use Imagick if available
             if (extension_loaded('imagick')) {
                 try {
                     $imagick = new \Imagick();
-                    $imagick->pingImage($path); // pingImage reads metadata only - very fast
+                    $imagick->pingImage($path);
                     $count = $imagick->getNumberImages();
                     $imagick->clear();
                     $imagick->destroy();
-                    if ($count > 0) {
-                        return $count;
-                    }
-                } catch (\Throwable $imagickError) {
-                    Log::warning("Imagick page count failed: " . $imagickError->getMessage());
-                }
+                    if ($count > 0) return $count;
+                } catch (\Throwable $e) {}
             }
 
-            // 2. Try exec/Ghostscript if exec() is available
-            $execDisabled = in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))));
-            if (!$execDisabled && function_exists('exec')) {
+            // 2. Try Ghostscript via exec
+            if (!in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && function_exists('exec')) {
                 try {
                     $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
-                    $command = $gsPath . ' -q -dNODISPLAY -dNOSAFER -c "(' . addslashes($path) . ') (r) file runpdfbegin pdfpagecount = quit" 2>&1';
                     $output = [];
                     $return_var = -1;
-                    exec($command, $output, $return_var);
+                    exec($gsPath . ' -q -dNODISPLAY -dNOSAFER -c "(' . addslashes($path) . ') (r) file runpdfbegin pdfpagecount = quit" 2>&1', $output, $return_var);
                     if ($return_var === 0 && !empty($output)) {
                         $lastLine = trim(end($output));
-                        if (is_numeric($lastLine) && (int) $lastLine > 0) {
-                            return (int) $lastLine;
-                        }
+                        if (is_numeric($lastLine) && (int) $lastLine > 0) return (int) $lastLine;
                     }
-                } catch (\Throwable $gsError) {
-                    Log::warning("Ghostscript page count failed: " . $gsError->getMessage());
-                }
+                } catch (\Throwable $e) {}
             }
 
-            // 3. Fallback: read PDF /Count attribute (pure PHP, no extensions)
+            // 3. pure PHP fallback
             $content = @file_get_contents($path);
-            if ($content === false)
-                return 1;
-
-            if (preg_match_all('/\/Count\s+(\d+)/', $content, $matches)) {
-                $counts = array_map('intval', $matches[1]);
-                $pageCount = max($counts);
-                if ($pageCount > 0)
-                    return $pageCount;
+            if ($content !== false) {
+                if (preg_match_all('/\/Count\s+(\d+)/', $content, $matches)) {
+                    $pageCount = max(array_map('intval', $matches[1]));
+                    if ($pageCount > 0) return $pageCount;
+                }
+                $pageEntries = preg_match_all('/\/Type\s*\/Page[^s]/', $content, $m);
+                return $pageEntries > 0 ? $pageEntries : 1;
             }
 
-            $pageEntries = preg_match_all('/\/Type\s*\/Page[^s]/', $content, $m);
-            return $pageEntries > 0 ? $pageEntries : 1;
-
+            return 1; // Default fallback if found but unreadable
         } catch (\Throwable $e) {
-            Log::warning("countPdfPages error for {$path}: " . $e->getMessage());
             return 1;
         }
     }
