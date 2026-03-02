@@ -1341,16 +1341,20 @@
             <span>React / InertiaJS Frontend</span>
             <span>Stripe & PayPal Payments</span>
             <span>Redeem Code System</span>
+            <span>SQLite Offline Database</span>
             <span>Role-Based Access Control</span>
             <span>Laravel Sanctum Auth</span>
+            <span>Remote Session Management</span>
             <span>Document Reader & Viewer</span>
             <span>Laravel 12 Backend</span>
             <span>Flutter Mobile App</span>
             <span>React / InertiaJS Frontend</span>
             <span>Stripe & PayPal Payments</span>
             <span>Redeem Code System</span>
+            <span>SQLite Offline Database</span>
             <span>Role-Based Access Control</span>
             <span>Laravel Sanctum Auth</span>
+            <span>Remote Session Management</span>
             <span>Document Reader & Viewer</span>
         </div>
     </div>
@@ -1471,6 +1475,10 @@
                 <div class="stat-num">2</div>
                 <div class="stat-label">Payment Gateways</div>
             </div>
+            <div class="stat-item">
+                <div class="stat-num">100%</div>
+                <div class="stat-label">Offline Capable</div>
+            </div>
         </div>
     </div>
 
@@ -1525,7 +1533,13 @@
                         plaintext credentials.</div>
                 </div>
                 <div class="tech-card">
-                    <div class="tech-icon">🚀</div>
+                    <div class="tech-icon">�️</div>
+                    <div class="tech-name">SQLite (sqflite)</div>
+                    <div class="tech-desc">On-device relational database powering the offline document cache. Tracks
+                        document metadata and download status — survives network loss.</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">�🚀</div>
                     <div class="tech-name">Cloudways Deployment</div>
                     <div class="tech-desc">Production deployment on Cloudways with Ghostscript for PDF page rendering
                         and image generation.</div>
@@ -1589,6 +1603,11 @@
                         <div class="arch-item">
                             <div class="arch-item-title">Public/Private Storage</div>
                             <div class="arch-item-desc">Static assets (covers) vs Secured assets (PDFs/Pages).</div>
+                        </div>
+                        <div class="arch-item" style="border: 1px solid rgba(100,200,100,.2);">
+                            <div class="arch-item-title">📱 SQLite (On-Device)</div>
+                            <div class="arch-item-desc">Local document cache &amp; download tracking — enables full
+                                offline reading.</div>
                         </div>
                     </div>
                 </div>
@@ -1684,6 +1703,32 @@
                             subscription grants access to all documents. Stripe and PayPal backed.</div>
                         <div class="feature-tags"><span class="feature-tag">Recurring</span><span
                                 class="feature-tag">Admin-managed</span></div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🗃️</div>
+                    <div class="feature-body">
+                        <div class="feature-title">SQLite Offline Database</div>
+                        <div class="feature-desc">All document metadata is cached locally in an on-device SQLite
+                            database via <code
+                                style="font-size:11px;background:rgba(255,255,255,.08);padding:1px 4px;border-radius:4px;">sqflite</code>.
+                            Downloaded editions show an <em>Available Offline</em> badge in the Library and are
+                            accessible without a network connection.</div>
+                        <div class="feature-tags"><span class="feature-tag">sqflite</span><span
+                                class="feature-tag">Offline-first</span><span
+                                class="feature-tag">flutter_cache_manager</span></div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📡</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Remote Session Management</div>
+                        <div class="feature-desc">Users can view all active sessions across every device and sign out
+                            remotely from any or all of them — from the web profile or the mobile app. Powered by
+                            Sanctum token revocation and Eloquent web-session invalidation.</div>
+                        <div class="feature-tags"><span class="feature-tag">Sanctum</span><span
+                                class="feature-tag">Cross-device</span><span class="feature-tag">One-device
+                                policy</span></div>
                     </div>
                 </div>
             </div>
@@ -1881,6 +1926,26 @@
                                     library. Page-by-page secure reader with no PDF exposure.</div>
                             </div>
                         </div>
+                        <div class="feature-card" style="padding:20px 24px;">
+                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">🗃️
+                            </div>
+                            <div class="feature-body">
+                                <div class="feature-title" style="font-size:14px;">SQLite Offline Cache</div>
+                                <div class="feature-desc" style="font-size:12px;">Document list & download status
+                                    persisted in a local SQLite DB. Green <em>OFFLINE</em> badge when pages are cached.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="feature-card" style="padding:20px 24px;">
+                            <div class="feature-icon" style="font-size:18px;width:40px;height:40px;min-width:40px;">📡
+                            </div>
+                            <div class="feature-body">
+                                <div class="feature-title" style="font-size:14px;">Remote Sign-Out</div>
+                                <div class="feature-desc" style="font-size:12px;">Sign out from all other sessions
+                                    remotely
+                                    via the profile page — works across web & mobile simultaneously.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -2003,9 +2068,11 @@
             <span class="footer-tag">Stripe</span>
             <span class="footer-tag">PayPal</span>
             <span class="footer-tag">MySQL</span>
+            <span class="footer-tag">SQLite</span>
             <span class="footer-tag">Ghostscript</span>
             <span class="footer-tag">BLoC</span>
             <span class="footer-tag">Cloudways</span>
+            <span class="footer-tag">Offline-First</span>
         </div>
         <div class="footer-copy">© 2026 Te Uekera Digital — Showcase Page</div>
     </footer>

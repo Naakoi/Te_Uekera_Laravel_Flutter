@@ -1,70 +1,83 @@
 import 'package:flutter/foundation.dart';
 import 'package:mobile/data/datasources/document_remote_datasource.dart';
+import 'package:mobile/data/datasources/document_local_datasource.dart';
 import 'package:mobile/data/models/document_model.dart';
 import 'package:mobile/domain/repositories/document_repository.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/core/utils/api_client.dart';
-import 'dart:convert';
-import 'dart:io' as io;
-import 'package:path_provider/path_provider.dart';
 
 class DocumentRepositoryImpl implements DocumentRepository {
   final DocumentRemoteDataSource remoteDataSource;
+  final DocumentLocalDataSource localDataSource;
 
-  DocumentRepositoryImpl({required this.remoteDataSource});
+  DocumentRepositoryImpl({
+    required this.remoteDataSource,
+    DocumentLocalDataSource? localDataSource,
+  }) : localDataSource = localDataSource ?? DocumentLocalDataSource();
 
+  /// Fetch documents from server and cache in SQLite.
+  /// Falls back to the local SQLite cache when offline.
   @override
   Future<List<DocumentModel>> getDocuments() async {
     try {
-      final documents = await remoteDataSource.getDocuments();
+      final remoteDocuments = await remoteDataSource.getDocuments();
 
       if (!kIsWeb) {
         try {
-          final directory = await getApplicationDocumentsDirectory();
-          final file = io.File('${directory.path}/cached_documents.json');
-          final jsonString = jsonEncode(
-            documents.map((e) => e.toJson()).toList(),
-          );
-          await file.writeAsString(jsonString);
+          // Before syncing, read which documents are already downloaded
+          // so we can preserve the flag across the upsert.
+          final existingCached = await localDataSource.getCachedDocuments();
+          final downloadedIds = {
+            for (final d in existingCached)
+              if (d.isDownloaded) d.id,
+          };
+
+          // Merge the isDownloaded state into the fresh server response
+          final merged = remoteDocuments.map((doc) {
+            return downloadedIds.contains(doc.id)
+                ? doc.copyWith(isDownloaded: true)
+                : doc;
+          }).toList();
+
+          await localDataSource.cacheDocuments(merged);
+          return merged;
         } catch (e) {
-          debugPrint('Error caching documents: $e');
+          debugPrint('DocumentRepositoryImpl: Error caching to SQLite: $e');
         }
       }
 
-      return documents;
+      return remoteDocuments;
     } catch (e) {
+      // Network/server unavailable – fall back to SQLite cache
       rethrow;
     }
   }
 
+  /// Return documents from SQLite (used when offline).
   @override
   Future<List<DocumentModel>> getCachedDocuments() async {
     if (kIsWeb) return [];
+    return localDataSource.getCachedDocuments();
+  }
 
+  @override
+  Future<DocumentModel> getDocumentById(int id) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = io.File('${directory.path}/cached_documents.json');
-      if (await file.exists()) {
-        final jsonString = await file.readAsString();
-        final List<dynamic> jsonList = jsonDecode(jsonString);
-        return jsonList.map((e) => DocumentModel.fromJson(e)).toList();
-      }
-      return [];
-    } catch (e) {
-      return [];
+      return await remoteDataSource.getDocumentById(id);
+    } catch (_) {
+      // Fallback to local cache
+      final cached = await localDataSource.getCachedDocumentById(id);
+      if (cached != null) return cached;
+      rethrow;
     }
   }
 
-  @override
-  Future<DocumentModel> getDocumentById(int id) {
-    return remoteDataSource.getDocumentById(id);
-  }
-
+  /// Download all pages for [document] using flutter_cache_manager,
+  /// then mark it as downloaded in SQLite.
   @override
   Future<void> downloadDocument(DocumentModel document) async {
-    if (kIsWeb)
-      return; // Background downloading for offline use is not relevant for Web flows here
+    if (kIsWeb) return;
 
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
@@ -75,15 +88,35 @@ class DocumentRepositoryImpl implements DocumentRepository {
     if (deviceId != null) headers['X-Device-Id'] = deviceId;
 
     final pageCount = document.pageCount ?? 0;
-    if (pageCount == 0) return;
+    if (pageCount == 0) {
+      debugPrint(
+        'DocumentRepositoryImpl: No pages to download for doc ${document.id}',
+      );
+      return;
+    }
 
     for (int i = 1; i <= pageCount; i++) {
-      final imageUrl = '${ApiClient.baseUrl}/documents/${document.id}/pages/$i';
+      final imageUrl = '${ApiClient.baseUrl}documents/${document.id}/pages/$i';
       await DefaultCacheManager().downloadFile(
         imageUrl,
         key: imageUrl,
         authHeaders: headers,
       );
     }
+
+    // Mark in SQLite so the UI can reflect the downloaded status
+    await localDataSource.markAsDownloaded(document.id);
+  }
+
+  /// Check whether a document's pages are fully cached locally.
+  Future<bool> isDocumentDownloaded(int documentId) async {
+    if (kIsWeb) return false;
+    return localDataSource.isDocumentDownloaded(documentId);
+  }
+
+  /// Clear the local SQLite cache (call on logout).
+  Future<void> clearLocalCache() async {
+    if (kIsWeb) return;
+    await localDataSource.clearAll();
   }
 }

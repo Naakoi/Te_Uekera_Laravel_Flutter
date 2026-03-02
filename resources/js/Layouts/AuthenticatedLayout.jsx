@@ -228,7 +228,7 @@ export default function Authenticated({ user, header, children }) {
                 <header className="bg-white border-b-4 border-double border-black shadow-sm print:hidden">
                     <div className="max-w-7xl mx-auto py-6 md:py-8 px-4 sm:px-6 lg:px-8 text-[#1e3a8a] flex items-center justify-between">
                         <div className="shrink-0 border-l-4 md:border-l-8 border-[#be1e2d] pl-4 md:pl-6">
-                            <div className="text-xl md:text-3xl font-black uppercase tracking-tighter leading-none italic font-sans">{header}</div>
+                            <div className="text-xl md:text-3xl font-black uppercase tracking-tighter leading-none italic font-display">{header}</div>
                         </div>
                         <div className="hidden md:block text-[10px] font-black uppercase opacity-30 italic text-right">
                             Official Archive Access<br />

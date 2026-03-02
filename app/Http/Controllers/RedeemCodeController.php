@@ -58,7 +58,7 @@ class RedeemCodeController extends Controller
     {
         // Defence-in-depth: ensure the caller is authenticated via Sanctum
         // (route is already guarded by auth:sanctum middleware, but we double-check here)
-        $userId = auth('sanctum')->id();
+        $userId = auth()->id();
         if (!$userId) {
             return response()->json(['message' => 'You must be logged in to redeem a code.'], 401);
         }
@@ -154,7 +154,7 @@ class RedeemCodeController extends Controller
         ]);
 
         $now = Carbon::now();
-        $userId = auth('sanctum')->id(); // May be null for unauthenticated callers
+        $userId = auth()->id(); // May be null for unauthenticated callers
 
         // Device activation (full access, no document) - must not be expired.
         // SECURITY: If a user is logged in, scope device check to their user_id so

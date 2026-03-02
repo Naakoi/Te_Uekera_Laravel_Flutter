@@ -135,7 +135,7 @@ export default function Welcome({ auth }) {
 
                             {auth.user && (
                                 <Link
-                                    href={route('library.index')}
+                                    href={route('documents.library')}
                                     className="px-10 md:px-14 py-4 md:py-6 bg-[#1a1a1a] text-white font-sans font-black rounded-2xl shadow-2xl shadow-black/20 hover:shadow-black/40 hover:-translate-y-1 transition-all uppercase tracking-widest text-base md:text-lg active:scale-95 text-center w-full md:w-auto shrink-0"
                                 >
                                     My Library

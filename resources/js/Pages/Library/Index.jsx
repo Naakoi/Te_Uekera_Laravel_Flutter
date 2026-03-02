@@ -101,7 +101,7 @@ export default function Index({ auth, documents }) {
                     <div className="mb-8 md:mb-12 flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="text-center md:text-left">
                             <span className="inline-block bg-[#1a1a1a] text-white px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-full shadow-lg">Purchased Collection</span>
-                            <h2 className="mt-4 text-4xl md:text-6xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-sans leading-none">My Library</h2>
+                            <h2 className="mt-4 text-4xl md:text-6xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-display leading-none">My Library</h2>
                         </div>
 
                         {isAppOffline && (
@@ -204,7 +204,7 @@ export default function Index({ auth, documents }) {
                                         </Link>
 
                                         <div className="p-6 md:p-8 flex-1 flex flex-col bg-white/30 border-t border-white/40">
-                                            <h3 className="text-xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-sans group-hover:text-[#be1e2d] transition-colors truncate">{doc.title}</h3>
+                                            <h3 className="text-xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-display group-hover:text-[#be1e2d] transition-colors truncate">{doc.title}</h3>
 
                                             <div className="mt-6 flex flex-col gap-3">
                                                 <Link
@@ -257,7 +257,7 @@ export default function Index({ auth, documents }) {
                                         </div>
                                         <div className="flex-1 p-5 md:p-8 flex items-center justify-between gap-6">
                                             <div className="min-w-0">
-                                                <h3 className="text-lg md:text-2xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-sans line-clamp-1 group-hover:text-[#be1e2d] transition-colors">{doc.title}</h3>
+                                                <h3 className="text-lg md:text-2xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-display line-clamp-1 group-hover:text-[#be1e2d] transition-colors">{doc.title}</h3>
                                                 <div className="mt-2 flex items-center gap-3">
                                                     <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-gray-400">Archived Collection</span>
                                                     {!isCached && isAppOffline && (

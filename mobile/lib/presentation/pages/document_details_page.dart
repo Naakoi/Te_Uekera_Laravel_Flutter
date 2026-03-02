@@ -420,7 +420,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // Download Button
+          // Download Button / Offline Badge
           BlocConsumer<DocumentBloc, DocumentState>(
             listener: (context, state) {
               if (state is DocumentDownloadSuccess) {
@@ -441,10 +441,70 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
             },
             builder: (context, state) {
               if (state is DocumentDownloading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFFbe1e2d)),
+                return Column(
+                  children: [
+                    const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFbe1e2d),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Downloading pages for offline use…',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 );
               }
+
+              // Re-resolve the current document from loaded state
+              DocumentModel currentDoc = document;
+              if (state is DocumentLoaded) {
+                try {
+                  currentDoc = state.documents.firstWhere(
+                    (d) => d.id == document.id,
+                  );
+                } catch (_) {}
+              }
+
+              if (currentDoc.isDownloaded) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 24,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.08),
+                    border: Border.all(color: Colors.green),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.green,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'AVAILABLE OFFLINE',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                          fontSize: 14,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
               return OutlinedButton.icon(
                 onPressed: () {
                   context.read<DocumentBloc>().add(

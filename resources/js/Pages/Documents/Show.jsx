@@ -1,11 +1,50 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ActivationModal from '@/Components/ActivationModal';
 
 export default function Show({ auth, document, isPurchased }) {
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [purchasedState, setPurchasedState] = useState(isPurchased);
+    const [isOfflineCached, setIsOfflineCached] = useState(false);
+    const [isCaching, setIsCaching] = useState(false);
+
+    useEffect(() => {
+        if (purchasedState && 'caches' in window) {
+            caches.open('newspaper-library').then(cache => {
+                cache.match(`/documents/${document.id}/page/1`).then(match => {
+                    setIsOfflineCached(!!match);
+                });
+            });
+        }
+
+        const handleMessage = (event) => {
+            if (event.data.type === 'CACHE_SUCCESS' && event.data.docId === document.id) {
+                setIsOfflineCached(true);
+                setIsCaching(false);
+            } else if (event.data.type === 'CACHE_ERROR' && event.data.docId === document.id) {
+                setIsCaching(false);
+                alert('Offline save failed. Please check your connection.');
+            }
+        };
+
+        navigator.serviceWorker?.addEventListener('message', handleMessage);
+        return () => navigator.serviceWorker?.removeEventListener('message', handleMessage);
+    }, [purchasedState, document.id]);
+
+    const saveForOffline = () => {
+        if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+            alert('Offline features not available.');
+            return;
+        }
+
+        setIsCaching(true);
+        navigator.serviceWorker.controller.postMessage({
+            type: 'CACHE_IMAGES',
+            docId: document.id,
+            pageCount: document.page_count || 1
+        });
+    };
 
     return (
         <AuthenticatedLayout
@@ -47,7 +86,7 @@ export default function Show({ auth, document, isPurchased }) {
                                 <div className="md:col-span-3 space-y-8">
                                     <div>
                                         <span className="bg-[#ffde00] text-black px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-full mb-6 inline-block">Official Edition</span>
-                                        <h3 className="text-5xl md:text-7xl font-black text-[#1a1a1a] uppercase tracking-tighter leading-[0.9] italic font-sans mb-8">{document.title}</h3>
+                                        <h3 className="text-5xl md:text-7xl font-black text-[#1a1a1a] uppercase tracking-tighter leading-[0.9] italic font-display mb-8">{document.title}</h3>
                                         <p className="text-gray-800 text-2xl font-sans italic border-l-8 border-[#be1e2d] pl-10 py-2 leading-relaxed">
                                             {document.description || 'Access this high-fidelity digital edition of our newsletter. Features full-page scans and optimized reading experience for all devices.'}
                                         </p>
@@ -55,23 +94,36 @@ export default function Show({ auth, document, isPurchased }) {
 
                                     <div className="pt-10 space-y-6">
                                         {purchasedState ? (
-                                            <div className="bg-green-50/50 border border-green-100 p-8 rounded-[2rem] space-y-6">
+                                            <div className="bg-green-50/50 border border-green-100 p-8 rounded-[2rem] space-y-4">
                                                 <div className="flex items-center gap-4 text-green-700">
                                                     <div className="p-2 bg-green-100 rounded-lg">
                                                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
                                                     </div>
                                                     <span className="text-lg font-black uppercase tracking-tight italic">Successfully Activated!</span>
                                                 </div>
-                                                <Link
-                                                    href={route('documents.reader', document.id)}
-                                                    className="block w-full text-center px-10 py-6 bg-[#1a1a1a] text-[#ffde00] font-black rounded-2xl shadow-2xl hover:bg-[#be1e2d] hover:text-white hover:scale-[1.02] transition-all uppercase tracking-widest text-lg"
-                                                >
-                                                    Open Document Reader
-                                                </Link>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <Link
+                                                        href={route('documents.reader', document.id)}
+                                                        className="block w-full text-center px-10 py-6 bg-[#1a1a1a] text-[#ffde00] font-black rounded-2xl shadow-xl hover:bg-[#be1e2d] hover:text-white hover:scale-[1.02] transition-all uppercase tracking-widest text-lg"
+                                                    >
+                                                        Read Now
+                                                    </Link>
 
-
-
-
+                                                    {!isOfflineCached ? (
+                                                        <button
+                                                            onClick={saveForOffline}
+                                                            disabled={isCaching}
+                                                            className="block w-full text-center px-10 py-6 bg-white border-2 border-green-200 text-green-700 font-black rounded-2xl shadow-lg hover:border-green-400 transition-all uppercase tracking-widest text-xs"
+                                                        >
+                                                            {isCaching ? '💾 Saving...' : '💾 Save Offline'}
+                                                        </button>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center gap-3 bg-green-100 text-green-800 rounded-2xl px-6 py-4 font-black uppercase tracking-widest text-[10px]">
+                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" /></svg>
+                                                            Available Offline
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="space-y-6">
@@ -124,9 +176,7 @@ export default function Show({ auth, document, isPurchased }) {
                 onClose={() => setIsRedeeming(false)}
                 onActivated={() => {
                     setPurchasedState(true);
-                    // Reload to update the backend logic check
-                    // router.reload(); // Option 1
-                    window.location.reload(); // Option 2 (cleaner for state)
+                    window.location.reload();
                 }}
                 documentId={document.id}
                 documentTitle={document.title}

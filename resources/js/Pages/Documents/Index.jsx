@@ -59,7 +59,7 @@ export default function Index({ auth, documents }) {
                     {/* Shop Header */}
                     <div className="mb-8 md:mb-12">
                         <span className="inline-block bg-[#be1e2d] text-white px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-full shadow-lg shadow-red-500/20">Archive Library</span>
-                        <h2 className="mt-4 text-4xl md:text-6xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-sans leading-none">Available Editions</h2>
+                        <h2 className="mt-4 text-4xl md:text-6xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-display leading-none">Available Editions</h2>
                     </div>
 
                     {/* Search and Controls */}
@@ -190,7 +190,7 @@ export default function Index({ auth, documents }) {
                                         </div>
                                     </Link>
                                     <div className="p-6 md:p-10 flex-1 flex flex-col bg-white/30 backdrop-blur-sm border-t border-white/40">
-                                        <h3 className="text-xl md:text-3xl font-black text-[#1a1a1a] uppercase tracking-tighter leading-none italic mb-4 md:mb-6 font-sans group-hover:text-[#be1e2d] transition-colors line-clamp-2">{doc.title}</h3>
+                                        <h3 className="text-xl md:text-3xl font-black text-[#1a1a1a] uppercase tracking-tighter leading-none italic mb-4 md:mb-6 font-display group-hover:text-[#be1e2d] transition-colors line-clamp-2">{doc.title}</h3>
                                         <p className="text-gray-800 text-sm md:text-lg font-sans italic line-clamp-3 mb-6 md:mb-8 border-l-4 md:border-l-8 border-[#ffde00] pl-4 md:pl-8">
                                             {doc.description || 'Access this edition through our secure digital portal. High-quality scans of all original pages.'}
                                         </p>
@@ -236,7 +236,7 @@ export default function Index({ auth, documents }) {
                                     <div className="flex-1 p-5 md:p-8 flex flex-col justify-between">
                                         <div>
                                             <div className="flex items-start justify-between gap-4 mb-2">
-                                                <h3 className="text-lg md:text-3xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-sans leading-none group-hover:text-[#be1e2d] transition-colors line-clamp-1">{doc.title}</h3>
+                                                <h3 className="text-lg md:text-3xl font-black text-[#1a1a1a] uppercase tracking-tighter italic font-display leading-none group-hover:text-[#be1e2d] transition-colors line-clamp-1">{doc.title}</h3>
                                                 <div className={`${doc.has_access ? 'text-green-600' : 'text-[#be1e2d]'} text-[10px] md:text-xs font-black uppercase tracking-widest shrink-0 mt-1`}>
                                                     {doc.has_access ? 'Purchased' : `$${doc.price}`}
                                                 </div>
@@ -248,7 +248,7 @@ export default function Index({ auth, documents }) {
                                         <div className="flex items-center justify-between gap-4 pt-4 border-t border-black/5">
                                             <div className="flex items-center gap-2">
                                                 {isNew(doc) && (
-                                                    <span className="bg-blue-600 text-white px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-full">New</span>
+                                                    <span className="bg-blue-600 text-white px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-full animate-pulse shadow-sm">NEW RELEASE</span>
                                                 )}
                                                 <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] opacity-30 italic">Digital Newsstand Edition</span>
                                             </div>

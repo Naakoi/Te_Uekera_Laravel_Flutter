@@ -18,7 +18,7 @@ DocumentModel _$DocumentModelFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['published_at'] as String),
       hasAccess: json['has_access'] as bool? ?? false,
-      pageCount: json['page_count'] as int?,
+      pageCount: (json['page_count'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$DocumentModelToJson(DocumentModel instance) =>
