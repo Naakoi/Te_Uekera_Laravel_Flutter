@@ -13,7 +13,9 @@ class SubscriptionPlanController extends Controller
     public function index()
     {
         return Inertia::render('Admin/SubscriptionPlans/Index', [
-            'plans' => SubscriptionPlan::all(),
+            'plans' => SubscriptionPlan::withCount(['subscriptions' => function ($query) {
+                $query->where('status', 'active')->where('ends_at', '>', now());
+            }])->get(),
         ]);
     }
 

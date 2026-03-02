@@ -3,13 +3,14 @@ import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 
-export default function Dashboard({ auth, staff }) {
+export default function Dashboard({ auth, staff, stats, heatmap, recent_activity }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
         password: '',
         can_upload_documents: false,
         can_create_vouchers: false,
+        can_manage_users: false,
     });
 
     const submit = (e) => {
@@ -66,19 +67,101 @@ export default function Dashboard({ auth, staff }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-black text-3xl text-gray-800 leading-tight uppercase tracking-tighter">Staff Control Center</h2>}
+            header={<h2 className="font-black text-3xl text-gray-800 leading-tight uppercase tracking-tighter">System Registry</h2>}
         >
             <Head title="Admin Dashboard" />
 
             <div className="py-12 bg-[#f4f1ea] min-h-screen">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-12">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-10">
 
                     {/* Navigation Pills */}
-                    <div className="flex gap-4">
-                        <a href={route('admin.dashboard')} className="px-6 py-3 bg-[#be1e2d] text-white font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-lg shadow-red-500/20">Staff Management</a>
-                        <a href={route('admin.subscription-plans.index')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm">Subscription Plans</a>
-                        <a href={route('admin.gateway-settings.index')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm">Payment Gateways</a>
-                        <a href={route('admin.redeem_codes.index')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm">Activation Codes</a>
+                    <div className="flex flex-wrap gap-4 overflow-x-auto pb-4 md:pb-0">
+                        <a href={route('admin.dashboard')} className="px-6 py-3 bg-[#be1e2d] text-white font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-lg shadow-red-500/20 whitespace-nowrap">Platform Overview</a>
+                        <a href={route('admin.subscription-plans.index')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm whitespace-nowrap">Subscription Plans</a>
+                        <a href={route('admin.gateway-settings.index')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm whitespace-nowrap">Payment Gateways</a>
+                        <a href={route('admin.redeem_codes.index')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm whitespace-nowrap">Activation Codes</a>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="p-8 bg-white rounded-[2.5rem] shadow-xl border border-black/5 flex flex-col items-center text-center group hover:bg-[#be1e2d] hover:text-white transition-all cursor-default">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-2">Total Revenue</span>
+                            <span className="text-4xl font-black font-sans leading-none tracking-tighter">${stats?.total_revenue || '0.00'}</span>
+                            <span className="mt-4 text-[8px] font-black uppercase tracking-widest opacity-30 italic">Platform Life-to-Date</span>
+                        </div>
+                        <div className="p-8 bg-white rounded-[2.5rem] shadow-xl border border-black/5 flex flex-col items-center text-center group hover:bg-[#1e3a8a] hover:text-white transition-all cursor-default">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-2">Active Readers</span>
+                            <span className="text-4xl font-black font-sans leading-none tracking-tighter">{stats?.active_subscribers || 0}</span>
+                            <span className="mt-4 text-[8px] font-black uppercase tracking-widest opacity-30 italic">Verified Subscriptions</span>
+                        </div>
+                        <div className="p-8 bg-white rounded-[2.5rem] shadow-xl border border-black/5 flex flex-col items-center text-center group hover:bg-[#ffde00] hover:text-[#1e3a8a] transition-all cursor-default text-[#be1e2d]">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-2">30D Revenue</span>
+                            <span className="text-4xl font-black font-sans leading-none tracking-tighter">${stats?.monthly_revenue || '0.00'}</span>
+                            <span className="mt-4 text-[8px] font-black uppercase tracking-widest opacity-30 italic italic">Current Cycle</span>
+                        </div>
+                        <div className="p-8 bg-white rounded-[2.5rem] shadow-xl border border-black/5 flex flex-col items-center text-center group hover:bg-black hover:text-white transition-all cursor-default">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-2">Total Registers</span>
+                            <span className="text-4xl font-black font-sans leading-none tracking-tighter">{stats?.total_users || 0}</span>
+                            <span className="mt-4 text-[8px] font-black uppercase tracking-widest opacity-30 italic uppercase">Authenticated Clients</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                        {/* Heatmap/Top Locations */}
+                        <div className="lg:col-span-1 bg-white/80 backdrop-blur-md rounded-[3rem] shadow-2xl border border-black/5 p-10">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-[#be1e2d] mb-8 italic flex items-center gap-2">
+                                <span className="w-2 h-2 bg-[#be1e2d] animate-pulse rounded-full"></span>
+                                Top Reader Locations (48h)
+                            </h3>
+                            <div className="space-y-4">
+                                {heatmap && heatmap.length > 0 ? heatmap.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 bg-[#f4f1ea]/50 rounded-2xl border border-transparent hover:border-black/5 transition-all">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black uppercase text-gray-800 truncate max-w-[150px]">{item.location}</span>
+                                            <span className="text-[8px] font-bold text-gray-400 italic">Verified Live Session</span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="font-black text-xl text-[#be1e2d] leading-none">{item.count}</span>
+                                            <span className="text-[7px] font-black text-gray-300 tracking-widest opacity-50 uppercase">Active</span>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="py-10 text-center opacity-30 font-black uppercase tracking-widest text-xs">Waiting for session data...</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Recent Activity Stream */}
+                        <div className="lg:col-span-2 bg-white rounded-[3rem] shadow-2xl border border-black/5 p-10">
+                            <h3 className="text-sm font-black uppercase tracking-tight text-gray-400 mb-8 italic flex justify-between items-center">
+                                <span>Global Transaction Activity</span>
+                                <span className="text-[8px] font-black tracking-widest opacity-40 uppercase">Top 5 Recent</span>
+                            </h3>
+                            <div className="space-y-4">
+                                {recent_activity && recent_activity.length > 0 ? recent_activity.map((item, idx) => (
+                                    <div key={idx} className="flex items-center gap-6 p-4 border-l-4 border-l-[#be1e2d] bg-[#f4f1ea]/20 hover:bg-[#f4f1ea] transition-all rounded-r-2xl">
+                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-xl shrink-0">
+                                            💸
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-sm font-black uppercase tracking-tighter text-gray-900 truncate">{item.user?.name}</span>
+                                                <span className="text-[10px] font-black text-[#1e3a8a]">${item.amount}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[8px] font-bold opacity-60">
+                                                <span className="uppercase text-[#be1e2d]">{item.document?.title}</span>
+                                                <span className="italic">{new Date(item.created_at).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="py-12 border-2 border-dashed border-black/5 rounded-[2rem] flex flex-col items-center justify-center opacity-20">
+                                        <svg className="w-10 h-10 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Archive Silence</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Create Section */}

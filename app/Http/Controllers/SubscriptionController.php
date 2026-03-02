@@ -12,7 +12,7 @@ class SubscriptionController extends Controller
     {
         return Inertia::render('Subscription/Index', [
             'plans' => SubscriptionPlan::where('is_active', true)->get(),
-            'currentSubscription' => auth()->user()->subscriptions()->where('status', 'active')->where('ends_at', '>', now())->first(),
+            'currentSubscription' => auth()->user()->subscriptions()->with('plan')->where('status', 'active')->where('ends_at', '>', now())->first(),
         ]);
     }
 }
