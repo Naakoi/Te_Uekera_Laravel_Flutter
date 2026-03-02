@@ -188,57 +188,64 @@ class DocumentController extends Controller
                 // Ensure the cache directory exists
                 \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
 
-                $imagick = new \Imagick();
-
-                try {
-                    // Method 1: High resolution (best quality, but often blocked by policy.xml)
-                    $imagick->setResolution(150, 150);
-                    $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
-                } catch (\Throwable $e) {
-                    if (str_contains($e->getMessage(), 'security policy')) {
-                        // Method 2: No resolution (uses default, often bypasses policy.xml)
-                        try {
-                            $imagick->clear();
-                            $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
-                            Log::info("Used security fallback (low-res) for doc {$document->id} page $page");
-                        } catch (\Throwable $e2) {
-                            // Method 3: Hint sRGB colorspace BEFORE reading
-                            // This sometimes forces a different, unblocked coder/delegate
-                            $imagick->clear();
-                            $imagick->setColorspace(\Imagick::COLORSPACE_SRGB);
-                            $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
-                            Log::info("Used security fallback (sRGB-hint) for doc {$document->id} page $page");
-                        }
-                    } else {
-                        throw $e;
+                // --- 1. Use Imagick if available ---
+                if (extension_loaded('imagick')) {
+                    $imagick = new \Imagick();
+                    try {
+                        $imagick->setResolution(150, 150);
+                        $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                    } catch (\Throwable $e) {
+                        $imagick->clear();
+                        $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
                     }
-                }
 
-                // Robust CMYK to sRGB conversion
-                $colorspace = $imagick->getImageColorspace();
-                if ($colorspace === \Imagick::COLORSPACE_CMYK) {
-                    $imagick->setImageColorspace(\Imagick::COLORSPACE_CMYK);
-                    $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                    $colorspace = $imagick->getImageColorspace();
+                    if ($colorspace === \Imagick::COLORSPACE_CMYK) {
+                        $imagick->setImageColorspace(\Imagick::COLORSPACE_CMYK);
+                        $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                    } else {
+                        $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                    }
+
+                    $imagick->setImageFormat('png');
+                    $imagick->setImageCompressionQuality(90);
+                    $imagick->setImageBackgroundColor('white');
+
+                    $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                    $flat->setImageFormat('png');
+                    $flat->writeImage($fullPath);
+                    $flat->clear();
+                    $flat->destroy();
+                    $imagick->clear();
+                    $imagick->destroy();
+                } 
+                // --- 2. Use Ghostscript if available ---
+                else if (!in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && function_exists('exec')) {
+                    $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
+                    // Render specific page to PNG
+                    $command = sprintf(
+                        "%s -sDEVICE=png16m -o %s -dFirstPage=%d -dLastPage=%d -r150 -dGraphicsAlphaBits=4 -dTextAlphaBits=4 %s 2>&1",
+                        $gsPath,
+                        escapeshellarg($fullPath),
+                        $page,
+                        $page,
+                        escapeshellarg($pdfPath)
+                    );
+                    
+                    $output = [];
+                    $return_var = -1;
+                    exec($command, $output, $return_var);
+                    
+                    if ($return_var !== 0 || !file_exists($fullPath)) {
+                        throw new \Exception("Ghostscript failed to generate page: " . implode(" ", $output));
+                    }
                 } else {
-                    $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                    throw new \Exception("No rendering engine available (Imagick or Ghostscript)");
                 }
 
-                $imagick->setImageFormat('png');
-                $imagick->setImageCompressionQuality(90);
-                $imagick->setImageBackgroundColor('white');
-
-                // Use mergeImageLayers instead of deprecated flattenImages()
-                $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-                $flat->setImageFormat('png');
-                $flat->writeImage($fullPath);
-                $flat->clear();
-                $flat->destroy();
-                $imagick->clear();
-                $imagick->destroy();
-
-                Log::info("Page $page generated and cached for doc {$document->id} (CS: $colorspace)");
+                Log::info("Page $page generated and cached for doc {$document->id}");
             } catch (\Throwable $e) {
-                Log::error("Imagick page generation failed for doc {$document->id} page $page: " . $e->getMessage());
+                Log::error("Page generation failed for doc {$document->id} page $page: " . $e->getMessage());
                 return $this->placeholderPngResponse($e->getMessage());
             }
         }
