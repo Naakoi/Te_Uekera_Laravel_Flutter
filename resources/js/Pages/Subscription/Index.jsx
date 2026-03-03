@@ -1,7 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 
 export default function Index({ auth, plans, currentSubscription }) {
+    const { data: redeemData, setData: setRedeemData, post: postRedeem, processing: redeemProcessing, reset: resetRedeem } = useForm({
+        code: '',
+        device_id: '',
+    });
 
     const handleSubscription = (planId, gateway) => {
         if (gateway === 'stripe') {
@@ -81,19 +85,17 @@ export default function Index({ auth, plans, currentSubscription }) {
                             <div>
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
-                                    const code = e.target.code.value;
-                                    // Get or generate device ID for web tracking
                                     let deviceId = localStorage.getItem('te_uekera_device_id');
                                     if (!deviceId) {
                                         deviceId = 'web_' + Math.random().toString(36).substr(2, 9);
                                         localStorage.setItem('te_uekera_device_id', deviceId);
                                     }
 
-                                    router.post(route('redeem_code.redeem'), {
-                                        code: code,
-                                        device_id: deviceId
-                                    }, {
-                                        onSuccess: () => e.target.reset(),
+                                    postRedeem(route('redeem_code.redeem'), {
+                                        onBefore: () => {
+                                            redeemData.device_id = deviceId;
+                                        },
+                                        onSuccess: () => resetRedeem(),
                                     });
                                 }} className="flex gap-4">
                                     <input
@@ -101,13 +103,22 @@ export default function Index({ auth, plans, currentSubscription }) {
                                         name="code"
                                         placeholder="X1Y2Z3A4B5"
                                         required
+                                        value={redeemData.code}
+                                        onChange={(e) => setRedeemData('code', e.target.value.toUpperCase())}
                                         className="flex-grow bg-[#f4f1ea] border-none rounded-2xl focus:ring-4 focus:ring-[#ffde00]/30 font-black text-lg p-5 uppercase placeholder:opacity-30"
                                     />
                                     <button
                                         type="submit"
-                                        className="px-10 py-5 bg-black text-white font-black rounded-2xl hover:bg-[#be1e2d] transition-all uppercase tracking-widest text-[10px] shadow-xl"
+                                        disabled={redeemProcessing}
+                                        className="px-10 py-5 bg-black text-white font-black rounded-2xl hover:bg-[#be1e2d] transition-all uppercase tracking-widest text-[10px] shadow-xl flex items-center gap-3"
                                     >
-                                        Redeem
+                                        {redeemProcessing && (
+                                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        )}
+                                        {redeemProcessing ? 'Verifying...' : 'Redeem'}
                                     </button>
                                 </form>
                             </div>

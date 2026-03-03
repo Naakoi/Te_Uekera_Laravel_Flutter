@@ -3,9 +3,13 @@ import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 import LogoutOtherDevicesForm from './Partials/LogoutOtherDevicesForm';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 
 export default function Edit({ auth, mustVerifyEmail, status, sessions, tokens }) {
+    const { data: redeemData, setData: setRedeemData, post: postRedeem, processing: redeemProcessing, reset: resetRedeem } = useForm({
+        code: '',
+        device_id: '',
+    });
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -47,18 +51,15 @@ export default function Edit({ auth, mustVerifyEmail, status, sessions, tokens }
 
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
-                                    const code = e.target.code.value;
                                     let deviceId = localStorage.getItem('te_uekera_device_id');
                                     if (!deviceId) {
                                         deviceId = 'web_' + Math.random().toString(36).substr(2, 9);
                                         localStorage.setItem('te_uekera_device_id', deviceId);
                                     }
 
-                                    router.post(route('redeem_code.redeem'), {
-                                        code: code,
-                                        device_id: deviceId
-                                    }, {
-                                        onSuccess: () => e.target.reset(),
+                                    postRedeem(route('redeem_code.redeem'), {
+                                        onBefore: () => redeemData.device_id = deviceId,
+                                        onSuccess: () => resetRedeem(),
                                     });
                                 }} className="space-y-4">
                                     <div className="flex flex-col">
@@ -69,12 +70,21 @@ export default function Edit({ auth, mustVerifyEmail, status, sessions, tokens }
                                                 name="code"
                                                 placeholder="X1Y2Z3A4B5"
                                                 required
+                                                value={redeemData.code}
+                                                onChange={(e) => setRedeemData('code', e.target.value)}
                                                 className="flex-grow bg-[#f4f1ea] dark:bg-gray-900 border-none rounded-xl focus:ring-4 focus:ring-[#be1e2d]/10 font-black text-xs uppercase"
                                             />
                                             <button
                                                 type="submit"
-                                                className="px-6 py-2 bg-black text-white font-black rounded-xl hover:bg-[#be1e2d] transition-all uppercase tracking-widest text-[9px]"
+                                                disabled={redeemProcessing}
+                                                className="px-6 py-2 bg-black text-white font-black rounded-xl hover:bg-[#be1e2d] transition-all uppercase tracking-widest text-[9px] flex items-center gap-2"
                                             >
+                                                {redeemProcessing ? (
+                                                    <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                ) : null}
                                                 Activate
                                             </button>
                                         </div>
