@@ -62,8 +62,47 @@ class AdminController extends Controller
                 ->take(6);
         }
 
+        // Registered Readers List with Status & Country
+        $readers = User::where('role', 'client')->get()->map(function ($reader) {
+            $latestSession = DB::table('sessions')
+                ->where('user_id', $reader->id)
+                ->orderBy('last_activity', 'desc')
+                ->first();
+
+            $online = false;
+            $country = 'Unknown';
+
+            if ($latestSession) {
+                // Consider online if active in last 5 minutes
+                $online = ($latestSession->last_activity + 300) >= now()->getTimestamp();
+                $country = cache()->remember('ip_country_' . $latestSession->ip_address, now()->addDay(), function () use ($latestSession) {
+                    try {
+                        if ($latestSession->ip_address === '127.0.0.1' || $latestSession->ip_address === '::1') return 'Local';
+                        $info = Location::get($latestSession->ip_address);
+                        return $info ? ($info->countryName ?: 'Unknown') : 'Unknown';
+                    } catch (\Exception $e) { return 'Unknown'; }
+                });
+            } else {
+                // Check mobile tokens if no web session
+                $lastToken = $reader->tokens()->orderBy('last_used_at', 'desc')->first();
+                if ($lastToken && $lastToken->last_used_at) {
+                    $online = $lastToken->last_used_at->addMinutes(15)->isFuture();
+                }
+            }
+
+            return [
+                'id' => $reader->id,
+                'name' => $reader->name,
+                'email' => $reader->email,
+                'online' => $online,
+                'recent_country' => $country,
+                'last_active' => $latestSession ? Carbon::createFromTimestamp($latestSession->last_activity)->diffForHumans() : 'Never',
+            ];
+        });
+
         return Inertia::render('Admin/Dashboard', [
             'staff' => User::where('role', 'staff')->get(),
+            'readers' => $readers,
             'stats' => [
                 'active_subscribers' => $activeSubscribersCount,
                 'total_revenue' => round($totalRevenue, 2),

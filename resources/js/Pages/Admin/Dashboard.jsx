@@ -3,7 +3,8 @@ import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 
-export default function Dashboard({ auth, staff, stats, heatmap, recent_activity }) {
+export default function Dashboard({ auth, staff, readers, stats, heatmap, recent_activity }) {
+    const [activeTab, setActiveTab] = useState('staff');
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -273,86 +274,151 @@ export default function Dashboard({ auth, staff, stats, heatmap, recent_activity
                     </div>
 
                     {/* Table Section */}
-                    <div className="bg-white/80 backdrop-blur-md overflow-hidden shadow-2xl sm:rounded-[4rem] border border-black/5">
+                    <div className="bg-white/80 backdrop-blur-md overflow-hidden shadow-2xl sm:rounded-[4rem] border border-black/5 min-h-[600px]">
                         <div className="p-12">
-                            <h3 className="text-2xl font-black uppercase tracking-tighter italic text-gray-400 mb-10">Active Staff List</h3>
-
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="border-b-2 border-black/5">
-                                            <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d]">Staff Member</th>
-                                            <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d]">Permissions</th>
-                                            <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d] text-right">Administrative</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-black/5">
-                                        {staff.map((member) => (
-                                            <tr key={member.id} className="group hover:bg-[#be1e2d]/5 transition-colors">
-                                                <td className="py-8 px-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-black text-xl text-gray-900 tracking-tighter uppercase">{member.name}</span>
-                                                        <span className="text-xs font-bold text-gray-400 italic font-mono">{member.email}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-8 px-4">
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => togglePermission(member, 'can_upload_documents')}
-                                                            className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg border transition-all ${member.can_upload_documents
-                                                                ? 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'
-                                                                : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-blue-200 hover:text-blue-400'
-                                                                }`}
-                                                        >
-                                                            Uploads
-                                                        </button>
-                                                        <button
-                                                            onClick={() => togglePermission(member, 'can_create_vouchers')}
-                                                            className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg border transition-all ${member.can_create_vouchers
-                                                                ? 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100'
-                                                                : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-amber-200 hover:text-amber-400'
-                                                                }`}
-                                                        >
-                                                            Vouchers
-                                                        </button>
-                                                        <button
-                                                            onClick={() => togglePermission(member, 'can_manage_users')}
-                                                            className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg border transition-all ${member.can_manage_users
-                                                                ? 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100'
-                                                                : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-purple-200 hover:text-purple-400'
-                                                                }`}
-                                                        >
-                                                            Readers
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                                <td className="py-8 px-4 text-right">
-                                                    <div className="flex gap-2 justify-end">
-                                                        <button
-                                                            onClick={() => openEditModal(member)}
-                                                            className="p-4 text-blue-300 hover:text-blue-600 hover:bg-white rounded-2xl transition-all group"
-                                                            title="Edit Staff"
-                                                        >
-                                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => deleteStaff(member.id)}
-                                                            className="p-4 text-[#be1e2d]/20 hover:text-[#be1e2d] hover:bg-white rounded-2xl transition-all group"
-                                                            title="Revoke Permission"
-                                                        >
-                                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                                <div className="flex gap-8">
+                                    <button
+                                        onClick={() => setActiveTab('staff')}
+                                        className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 ${activeTab === 'staff' ? 'text-[#be1e2d] border-[#be1e2d]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}
+                                    >
+                                        Team Members
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('readers')}
+                                        className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 ${activeTab === 'readers' ? 'text-[#be1e2d] border-[#be1e2d]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}
+                                    >
+                                        Registered Readers
+                                    </button>
+                                </div>
+                                <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest italic">
+                                    {activeTab === 'staff' ? `${staff.length} Active Accounts` : `${readers.length} Registered Clients`}
+                                </div>
                             </div>
+
+                            {activeTab === 'staff' ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b-2 border-black/5">
+                                                <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d]">Staff Member</th>
+                                                <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d]">Permissions</th>
+                                                <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d] text-right">Administrative</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-black/5">
+                                            {staff.map((member) => (
+                                                <tr key={member.id} className="group hover:bg-[#be1e2d]/5 transition-colors">
+                                                    <td className="py-8 px-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-black text-xl text-gray-900 tracking-tighter uppercase">{member.name}</span>
+                                                            <span className="text-xs font-bold text-gray-400 italic font-mono">{member.email}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-8 px-4">
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => togglePermission(member, 'can_upload_documents')}
+                                                                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg border transition-all ${member.can_upload_documents
+                                                                    ? 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'
+                                                                    : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-blue-200 hover:text-blue-400'
+                                                                    }`}
+                                                            >
+                                                                Uploads
+                                                            </button>
+                                                            <button
+                                                                onClick={() => togglePermission(member, 'can_create_vouchers')}
+                                                                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg border transition-all ${member.can_create_vouchers
+                                                                    ? 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100'
+                                                                    : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-amber-200 hover:text-amber-400'
+                                                                    }`}
+                                                            >
+                                                                Vouchers
+                                                            </button>
+                                                            <button
+                                                                onClick={() => togglePermission(member, 'can_manage_users')}
+                                                                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg border transition-all ${member.can_manage_users
+                                                                    ? 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100'
+                                                                    : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-purple-200 hover:text-purple-400'
+                                                                    }`}
+                                                            >
+                                                                Readers
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-8 px-4 text-right">
+                                                        <div className="flex gap-2 justify-end">
+                                                            <button
+                                                                onClick={() => openEditModal(member)}
+                                                                className="p-4 text-blue-300 hover:text-blue-600 hover:bg-white rounded-2xl transition-all group"
+                                                                title="Edit Staff"
+                                                            >
+                                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                </svg>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteStaff(member.id)}
+                                                                className="p-4 text-[#be1e2d]/20 hover:text-[#be1e2d] hover:bg-white rounded-2xl transition-all group"
+                                                                title="Revoke Permission"
+                                                            >
+                                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b-2 border-black/5">
+                                                <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d]">Reader Profile</th>
+                                                <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d]">Status</th>
+                                                <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d]">Recent Location</th>
+                                                <th className="py-6 px-4 text-xs font-black uppercase tracking-widest text-[#be1e2d] text-right">Last Activity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-black/5">
+                                            {readers.map((reader) => (
+                                                <tr key={reader.id} className="group hover:bg-[#be1e2d]/5 transition-colors">
+                                                    <td className="py-8 px-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-black text-xl text-gray-900 tracking-tighter uppercase">{reader.name}</span>
+                                                            <span className="text-xs font-bold text-gray-400 italic font-mono">{reader.email}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-8 px-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`w-2.5 h-2.5 rounded-full ${reader.online ? 'bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gray-300'}`}></span>
+                                                            <span className={`text-[10px] font-black uppercase tracking-widest ${reader.online ? 'text-green-600' : 'text-gray-400'}`}>
+                                                                {reader.online ? 'Online' : 'Offline'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-8 px-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-black text-gray-800 uppercase tracking-tight">{reader.recent_country}</span>
+                                                            <span className="text-[8px] font-bold text-gray-400 italic">Last Known Territory</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-8 px-4 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-black text-xs text-gray-900 uppercase">{reader.last_active}</span>
+                                                            <span className="text-[8px] font-black text-gray-300 tracking-widest opacity-50 uppercase italic">Recorded Trace</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

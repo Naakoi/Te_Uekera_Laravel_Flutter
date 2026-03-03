@@ -1344,16 +1344,7 @@
             <span>SQLite Offline Database</span>
             <span>Role-Based Access Control</span>
             <span>Laravel Sanctum Auth</span>
-            <span>Remote Session Management</span>
-            <span>Document Reader & Viewer</span>
-            <span>Laravel 12 Backend</span>
-            <span>Flutter Mobile App</span>
-            <span>React / InertiaJS Frontend</span>
-            <span>Stripe & PayPal Payments</span>
-            <span>Redeem Code System</span>
-            <span>SQLite Offline Database</span>
-            <span>Role-Based Access Control</span>
-            <span>Laravel Sanctum Auth</span>
+            <span>IP-Based Geolocation</span>
             <span>Remote Session Management</span>
             <span>Document Reader & Viewer</span>
         </div>
@@ -1473,8 +1464,8 @@
                 <div class="stat-label">Mobile Pages</div>
             </div>
             <div class="stat-item">
-                <div class="stat-num">2</div>
-                <div class="stat-label">Payment Gateways</div>
+                <div class="stat-num">Live</div>
+                <div class="stat-label">Reader Heatmap</div>
             </div>
             <div class="stat-item">
                 <div class="stat-num">100%</div>
@@ -1584,6 +1575,10 @@
                         <div class="arch-item">
                             <div class="arch-item-title">Sanctum Protection</div>
                             <div class="arch-item-desc">Stateful web auth + Stateless API token auth.</div>
+                        </div>
+                        <div class="arch-item" style="border: 1px solid rgba(190, 30, 45, .3);">
+                            <div class="arch-item-title">🌍 IP Geolocation</div>
+                            <div class="arch-item-desc">Stevebauman Location service for session tracking.</div>
                         </div>
                         <div class="arch-item">
                             <div class="arch-item-title">Ghostscript Engine</div>
@@ -1720,16 +1715,20 @@
                                 class="feature-tag">flutter_cache_manager</span></div>
                     </div>
                 </div>
+                <div class="feature-card accent">
+                    <div class="feature-icon">🌍</div>
+                    <div class="feature-body">
+                        <div class="feature-title">Live Geolocation Intelligence</div>
+                        <div class="feature-desc">Real-time reader activity heatmap. Aggregates session data by city and country for administrators. Users see verified login locations on their profile.</div>
+                        <div class="feature-tags"><span class="feature-tag">IP Geolocation</span><span class="feature-tag">Heatmap</span><span class="feature-tag">Admin Intelligence</span></div>
+                    </div>
+                </div>
                 <div class="feature-card">
                     <div class="feature-icon">📡</div>
                     <div class="feature-body">
                         <div class="feature-title">Remote Session Management</div>
-                        <div class="feature-desc">Users can view all active sessions across every device and sign out
-                            remotely from any or all of them — from the web profile or the mobile app. Powered by
-                            Sanctum token revocation and Eloquent web-session invalidation.</div>
-                        <div class="feature-tags"><span class="feature-tag">Sanctum</span><span
-                                class="feature-tag">Cross-device</span><span class="feature-tag">One-device
-                                policy</span></div>
+                        <div class="feature-desc">Users can view all active sessions across every device and sign out remotely from any or all of them — from the web profile or the mobile app. Powered by Sanctum token revocation and Eloquent web-session invalidation.</div>
+                        <div class="feature-tags"><span class="feature-tag">Sanctum</span><span class="feature-tag">Cross-device</span><span class="feature-tag">One-device policy</span></div>
                     </div>
                 </div>
             </div>
@@ -1868,12 +1867,23 @@
                 <!-- STEP 3 -->
                 <div class="step-card">
                     <div class="step-num">3</div>
-                    <h3 class="feature-title">Secure Access</h3>
-                    <p class="feature-desc">Once verified, users receive a persistent auth token (Sanctum) stored
-                        securely on their device for instant access.</p>
+                    <h3 class="feature-title">Premium Access</h3>
+                    <p class="feature-desc">Select a subscription tier (Individual, Monthly, or Yearly) and activate via Stripe or PayPal for instant archive access.</p>
+                    <div class="step-mockup" style="background: var(--ink); color: #fff; padding: 15px;">
+                        <div style="font-size: 8px; color: var(--gold); font-weight: 900; margin-bottom: 5px;">MEMBER TIER</div>
+                        <div style="font-size: 10px; font-weight: 900;">UNLIMITED PASS</div>
+                        <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 8px 0;"></div>
+                        <div style="font-size: 6px; color: #888;">Valid through March 2027</div>
+                    </div>
+                </div>
+                <!-- STEP 4 -->
+                <div class="step-card">
+                    <div class="step-num">4</div>
+                    <h3 class="feature-title">Secure Reading</h3>
+                    <p class="feature-desc">Once activated, sessions are geolocated and tokens are locked to the device, ensuring the "One Device" security policy.</p>
                     <div class="step-mockup" style="text-align: center; border: 1px dashed #ddd;">
-                        <span style="font-size: 40px;">🔓</span>
-                        <div style="font-size: 10px; color: #888; margin-top: 10px;">Token: 7|abc123xyz...</div>
+                        <span style="font-size: 32px;">🔓</span>
+                        <div style="font-size: 8px; color: #22c55e; font-weight: 900; margin-top: 5px;">SESSION VERIFIED</div>
                     </div>
                 </div>
             </div>
