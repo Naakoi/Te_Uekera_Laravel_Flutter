@@ -66,7 +66,55 @@ export default function Index({ auth, plans, currentSubscription }) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    {/* Redeem Code Section */}
+                    <div className="mt-20 bg-white p-12 rounded-[4rem] shadow-2xl border-4 border-[#ffde00] relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 bg-[#ffde00] text-gray-900 px-10 py-3 rounded-bl-[2rem] font-black text-[10px] uppercase tracking-[0.3em]">
+                            Voucher Activation
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                            <div>
+                                <h3 className="text-4xl font-black text-gray-900 uppercase tracking-tighter italic mb-4 leading-none text-[#be1e2d]">Have an activation code?</h3>
+                                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest opacity-80 italic">
+                                    Enter your physical voucher or promotional code below to unlock premium access instantly across all your devices.
+                                </p>
+                            </div>
+                            <div>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const code = e.target.code.value;
+                                    // Get or generate device ID for web tracking
+                                    let deviceId = localStorage.getItem('te_uekera_device_id');
+                                    if (!deviceId) {
+                                        deviceId = 'web_' + Math.random().toString(36).substr(2, 9);
+                                        localStorage.setItem('te_uekera_device_id', deviceId);
+                                    }
+
+                                    router.post(route('redeem_code.redeem'), {
+                                        code: code,
+                                        device_id: deviceId
+                                    }, {
+                                        onSuccess: () => e.target.reset(),
+                                    });
+                                }} className="flex gap-4">
+                                    <input
+                                        type="text"
+                                        name="code"
+                                        placeholder="X1Y2Z3A4B5"
+                                        required
+                                        className="flex-grow bg-[#f4f1ea] border-none rounded-2xl focus:ring-4 focus:ring-[#ffde00]/30 font-black text-lg p-5 uppercase placeholder:opacity-30"
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="px-10 py-5 bg-black text-white font-black rounded-2xl hover:bg-[#be1e2d] transition-all uppercase tracking-widest text-[10px] shadow-xl"
+                                    >
+                                        Redeem
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-10">
                         {/* Pay Per View */}
                         <div className="bg-white p-12 rounded-[4rem] shadow-xl border border-black/5 hover:border-[#be1e2d]/20 transition-all flex flex-col group">
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4">A La Carte</span>

@@ -60,7 +60,10 @@ class RedeemCodeController extends Controller
         // (route is already guarded by auth:sanctum middleware, but we double-check here)
         $userId = auth()->id();
         if (!$userId) {
-            return response()->json(['message' => 'You must be logged in to redeem a code.'], 401);
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'You must be logged in to redeem a code.'], 401);
+            }
+            return redirect()->route('login')->with('error', 'You must be logged in to redeem a code.');
         }
 
         $request->validate([
@@ -72,16 +75,16 @@ class RedeemCodeController extends Controller
         $redeemCode = RedeemCode::where('code', $request->code)->first();
 
         if (!$redeemCode) {
-            return response()->json(['message' => 'Invalid code.'], 422);
+            throw \Illuminate\Validation\ValidationException::withMessages(['code' => 'Invalid code.']);
         }
 
         if ($redeemCode->is_used) {
-            return response()->json(['message' => 'This code has already been used.'], 422);
+            throw \Illuminate\Validation\ValidationException::withMessages(['code' => 'This code has already been used.']);
         }
 
         // If code is specifically for a document, and user is trying to redeem it for a different/no document context
         if ($redeemCode->document_id && $request->document_id && $redeemCode->document_id != $request->document_id) {
-            return response()->json(['message' => 'This code is for a different document.'], 422);
+            throw \Illuminate\Validation\ValidationException::withMessages(['code' => 'This code is for a different document.']);
         }
 
         $now = Carbon::now();
@@ -101,7 +104,7 @@ class RedeemCodeController extends Controller
         }
 
         if ($deviceQuery->exists()) {
-            return response()->json(['message' => 'This device is already activated for this content.'], 422);
+            throw \Illuminate\Validation\ValidationException::withMessages(['code' => 'This device is already activated for this content.']);
         }
 
         // Check if this user already has an active activation for this content (on any device)
@@ -119,7 +122,7 @@ class RedeemCodeController extends Controller
         }
 
         if ($userQuery->exists()) {
-            return response()->json(['message' => 'Your account already has an active activation for this content.'], 422);
+            throw \Illuminate\Validation\ValidationException::withMessages(['code' => 'Your account already has an active activation for this content.']);
         }
 
         // Calculate expiration date
@@ -138,12 +141,16 @@ class RedeemCodeController extends Controller
             'user_id' => $userId,
         ]);
 
-        return response()->json([
-            'message' => 'Code redeemed successfully!',
-            'activated' => true,
-            'target' => $redeemCode->document_id ? 'document' : 'device',
-            'expires_at' => $expiresAt ? $expiresAt->toDateTimeString() : null
-        ]);
+        if ($request->wantsJson() || $request->header('X-Inertia')) {
+            return response()->json([
+                'message' => 'Code redeemed successfully!',
+                'activated' => true,
+                'target' => $redeemCode->document_id ? 'document' : 'device',
+                'expires_at' => $expiresAt ? $expiresAt->toDateTimeString() : null
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Code redeemed successfully! Your premium access is now active.');
     }
 
     public function checkStatus(Request $request)

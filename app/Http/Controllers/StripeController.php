@@ -16,32 +16,54 @@ class StripeController extends Controller
     public function checkout(Request $request)
     {
         $request->validate([
-            'plan_id' => 'required|exists:subscription_plans,id',
+            'plan_id' => 'nullable|exists:subscription_plans,id',
+            'document_id' => 'nullable|exists:documents,id',
         ]);
 
-        $plan = SubscriptionPlan::findOrFail($request->plan_id);
-        $setting = PaymentGatewaySetting::where('gateway', 'stripe')->where('is_enabled', true)->firstOrFail();
+        if (!$request->plan_id && !$request->document_id) {
+            abort(422, 'Either plan_id or document_id is required');
+        }
 
+        $setting = PaymentGatewaySetting::where('gateway', 'stripe')->where('is_enabled', true)->firstOrFail();
         $config = (array) $setting->config;
-        Stripe::setApiKey($config['secret_key']);
+        \Stripe\Stripe::setApiKey($config['secret_key']);
+
+        $lineItems = [];
+        $metaData = [];
+        $successUrl = route('stripe.success') . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancelUrl = $request->plan_id ? route('subscription.index') : route('documents.show', $request->document_id);
+
+        if ($request->plan_id) {
+            $plan = SubscriptionPlan::findOrFail($request->plan_id);
+            $lineItems[] = [
+                'price_data' => [
+                    'currency' => 'usd',
+                    'product_data' => ['name' => $plan->name],
+                    'unit_amount' => $plan->price * 100,
+                ],
+                'quantity' => 1,
+            ];
+            $metaData['plan_id'] = $plan->id;
+        } else {
+            $document = Document::findOrFail($request->document_id);
+            $lineItems[] = [
+                'price_data' => [
+                    'currency' => 'usd',
+                    'product_data' => ['name' => "Edition: " . $document->title],
+                    'unit_amount' => $document->price * 100,
+                ],
+                'quantity' => 1,
+            ];
+            $metaData['document_id'] = $document->id;
+        }
 
         $session = Session::create([
             'payment_method_types' => ['card'],
-            'line_items' => [
-                [
-                    'price_data' => [
-                        'currency' => 'usd',
-                        'product_data' => [
-                            'name' => $plan->name,
-                        ],
-                        'unit_amount' => $plan->price * 100,
-                    ],
-                    'quantity' => 1,
-                ]
-            ],
+            'line_items' => $lineItems,
+            'metadata' => $metaData,
             'mode' => 'payment',
-            'success_url' => route('stripe.success') . '?session_id={CHECKOUT_SESSION_ID}&plan_id=' . $plan->id,
-            'cancel_url' => route('subscription.index'),
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
         ]);
 
         return redirect($session->url);
@@ -148,12 +170,7 @@ class StripeController extends Controller
 
     public function success(Request $request)
     {
-        // Existing web success logic...
-        // (Could be unified, but keeping simple for now)
         $sessionId = $request->get('session_id');
-        $planId = $request->get('plan_id');
-
-        $plan = SubscriptionPlan::findOrFail($planId);
         $setting = PaymentGatewaySetting::where('gateway', 'stripe')->where('is_enabled', true)->firstOrFail();
 
         $config = (array) $setting->config;
@@ -161,19 +178,36 @@ class StripeController extends Controller
         $session = Session::retrieve($sessionId);
 
         if ($session->payment_status === 'paid') {
-            Subscription::create([
-                'user_id' => auth()->id(),
-                'subscription_plan_id' => $plan->id,
-                'starts_at' => now(),
-                'ends_at' => now()->addDays($plan->duration_days),
-                'payment_method' => 'stripe',
-                'payment_id' => $session->id,
-                'status' => 'active',
-            ]);
+            $planId = $session->metadata->plan_id ?? null;
+            $documentId = $session->metadata->document_id ?? null;
 
-            return redirect()->route('subscription.index')->with('success', 'Subscription activated!');
+            if ($planId) {
+                $plan = SubscriptionPlan::findOrFail($planId);
+                Subscription::create([
+                    'user_id' => auth()->id(),
+                    'subscription_plan_id' => $plan->id,
+                    'starts_at' => now(),
+                    'ends_at' => now()->addDays($plan->duration_days),
+                    'payment_method' => 'stripe',
+                    'payment_id' => $session->id,
+                    'status' => 'active',
+                ]);
+                return redirect()->route('subscription.index')->with('success', 'Subscription activated!');
+            } elseif ($documentId) {
+                $document = Document::findOrFail($documentId);
+                Purchase::firstOrCreate([
+                    'user_id' => auth()->id(),
+                    'document_id' => $document->id,
+                ], [
+                    'amount' => $document->price,
+                    'payment_method' => 'stripe',
+                    'payment_id' => $session->id,
+                    'status' => 'completed',
+                ]);
+                return redirect()->route('documents.reader', $document->id)->with('success', 'Edition unlocked!');
+            }
         }
 
-        return redirect()->route('subscription.index')->with('error', 'Payment failed.');
+        return redirect()->route('documents.index')->with('error', 'Payment failed.');
     }
 }

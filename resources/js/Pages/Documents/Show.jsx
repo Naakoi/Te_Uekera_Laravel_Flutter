@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import ActivationModal from '@/Components/ActivationModal';
 
@@ -133,10 +133,10 @@ export default function Show({ auth, document, isPurchased }) {
                                                         <span className="text-6xl font-black text-[#be1e2d] italic tracking-tighter font-sans">${document.price}</span>
                                                     </div>
                                                     <button
-                                                        onClick={() => window.alert('This would integrate with a real payment gateway in production.')}
+                                                        onClick={() => router.post(route('stripe.checkout'), { document_id: document.id })}
                                                         className="px-10 py-5 bg-[#be1e2d] text-white font-black rounded-2xl shadow-2xl shadow-red-500/20 hover:bg-black hover:shadow-black/20 transition-all uppercase tracking-widest text-sm"
                                                     >
-                                                        Pay Online
+                                                        Pay via Stripe
                                                     </button>
                                                 </div>
 
