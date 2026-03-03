@@ -54,7 +54,7 @@ class GenerateDocumentPagesJob implements ShouldQueue
 
                 $pageDir = storage_path("app/pages/{$doc->id}");
                 Storage::disk('local')->makeDirectory("pages/{$doc->id}");
-                chmod($pageDir, 0777);
+                @chmod($pageDir, 0777);
 
                 $outputPattern = $pageDir . '/page-%d.png';
                 $command = sprintf(
@@ -151,11 +151,20 @@ class GenerateDocumentPagesJob implements ShouldQueue
                 $imagick->setImageFormat('png');
                 $imagick->setImageCompressionQuality(90);
                 $imagick->setImageBackgroundColor('white');
-                $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                
+                if (defined('\Imagick::LAYERMETHOD_FLATTEN')) {
+                    $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                } else {
+                    // Fallback for older/different Imagick versions
+                    $flat = method_exists($imagick, 'flattenImages') ? $imagick->flattenImages() : $imagick;
+                }
+                
                 $flat->setImageFormat('png');
                 $flat->writeImage($outputPath);
-                $flat->clear();
-                $flat->destroy();
+                if ($flat !== $imagick) {
+                    $flat->clear();
+                    $flat->destroy();
+                }
                 $imagick->clear();
                 $imagick->destroy();
             }

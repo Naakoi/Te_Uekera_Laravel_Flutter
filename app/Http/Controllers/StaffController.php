@@ -51,6 +51,11 @@ class StaffController extends Controller
             throw $e;
         }
 
+        if (!$request->hasFile('file') || !$request->file('file')->isValid()) {
+             \Illuminate\Support\Facades\Log::error('Upload failed: File missing or invalid.');
+             return redirect()->back()->withErrors(['file' => 'The file field is required and must be a valid PDF.']);
+        }
+
         $filePath = $request->file('file')->store('newspapers', 'local');
         $thumbnailPath = null;
 
@@ -69,15 +74,21 @@ class StaffController extends Controller
             $thumbnailFullPath = $thumbnailDir . '/' . $thumbnailFilename;
             $thumbnailPrefix = $thumbnailDir . '/' . pathinfo($thumbnailFilename, PATHINFO_FILENAME);
 
-            // pdftoppm -f 1 -l 1 -png -singlefile input_pdf output_prefix
-            $command = sprintf("pdftoppm -f 1 -l 1 -png -singlefile %s %s 2>&1", escapeshellarg($pdfPath), escapeshellarg($thumbnailPrefix));
-            $output = [];
-            $return_var = -1;
-            \exec($command, $output, $return_var);
+            // Try pdftoppm if exec is available
+            $execEnabled = function_exists('exec') && !in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))));
+            
+            if ($execEnabled) {
+                $command = sprintf("pdftoppm -f 1 -l 1 -png -singlefile %s %s 2>&1", escapeshellarg($pdfPath), escapeshellarg($thumbnailPrefix));
+                $output = [];
+                $return_var = -1;
+                @exec($command, $output, $return_var);
 
-            if ($return_var === 0 && file_exists($thumbnailFullPath)) {
-                $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
-            } else {
+                if ($return_var === 0 && file_exists($thumbnailFullPath)) {
+                    $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
+                }
+            }
+
+            if (!$thumbnailPath) {
                 // Fallback: use Imagick (works on Cloudways where exec() is disabled)
                 if (extension_loaded('imagick')) {
                     try {
@@ -116,11 +127,20 @@ class StaffController extends Controller
                         $imagick->setImageFormat('png');
                         $imagick->setImageCompressionQuality(85);
                         $imagick->setImageBackgroundColor('white');
-                        $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                        
+                        if (defined('\Imagick::LAYERMETHOD_FLATTEN')) {
+                            $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                        } else {
+                            // Fallback for older/different Imagick versions
+                            $flat = method_exists($imagick, 'flattenImages') ? $imagick->flattenImages() : $imagick;
+                        }
+                        
                         $flat->setImageFormat('png');
                         $flat->writeImage($thumbnailFullPath);
-                        $flat->clear();
-                        $flat->destroy();
+                        if ($flat !== $imagick) {
+                            $flat->clear();
+                            $flat->destroy();
+                        }
                         $imagick->clear();
                         $imagick->destroy();
                         $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
