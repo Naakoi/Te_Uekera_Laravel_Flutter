@@ -5,16 +5,20 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentGatewaySetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class GatewaySettingController extends Controller
 {
     public function index()
     {
+        Log::info('GatewaySettingController@index hit');
         $settings = PaymentGatewaySetting::all()->keyBy('gateway');
+        Log::info('Settings fetched', ['count' => $settings->count()]);
 
         // Ensure stripe and paypal records exist
         if (!$settings->has('stripe')) {
+            Log::info('Creating stripe setting');
             PaymentGatewaySetting::create([
                 'gateway' => 'stripe',
                 'config' => ['public_key' => '', 'secret_key' => '', 'webhook_secret' => ''],
@@ -23,6 +27,7 @@ class GatewaySettingController extends Controller
         }
 
         if (!$settings->has('paypal')) {
+            Log::info('Creating paypal setting');
             PaymentGatewaySetting::create([
                 'gateway' => 'paypal',
                 'config' => ['client_id' => '', 'client_secret' => '', 'app_id' => '', 'mode' => 'sandbox'],
@@ -30,6 +35,7 @@ class GatewaySettingController extends Controller
             ]);
         }
 
+        Log::info('Rendering Admin/GatewaySettings/Index');
         return Inertia::render('Admin/GatewaySettings/Index', [
             'settings' => PaymentGatewaySetting::all(),
         ]);

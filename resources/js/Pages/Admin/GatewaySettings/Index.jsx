@@ -4,18 +4,18 @@ import { useState } from 'react';
 import axios from 'axios';
 
 export default function Index({ auth, settings }) {
-    const stripeSetting = settings.find(s => s.gateway === 'stripe');
-    const paypalSetting = settings.find(s => s.gateway === 'paypal');
+    const stripeSetting = (settings || []).find(s => s.gateway === 'stripe');
+    const paypalSetting = (settings || []).find(s => s.gateway === 'paypal');
 
     const stripeForm = useForm({
         gateway: 'stripe',
-        config: stripeSetting ? stripeSetting.config : { public_key: '', secret_key: '', webhook_secret: '' },
+        config: (stripeSetting && stripeSetting.config) ? stripeSetting.config : { public_key: '', secret_key: '', webhook_secret: '' },
         is_enabled: stripeSetting ? !!stripeSetting.is_enabled : false,
     });
 
     const paypalForm = useForm({
         gateway: 'paypal',
-        config: paypalSetting ? paypalSetting.config : { client_id: '', client_secret: '', app_id: '', mode: 'sandbox' },
+        config: (paypalSetting && paypalSetting.config) ? paypalSetting.config : { client_id: '', client_secret: '', app_id: '', mode: 'sandbox' },
         is_enabled: paypalSetting ? !!paypalSetting.is_enabled : false,
     });
 
@@ -58,6 +58,14 @@ export default function Index({ auth, settings }) {
 
             <div className="py-12 bg-[#f4f1ea] min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-12">
+
+                    {/* Navigation Pills */}
+                    <div className="flex flex-wrap gap-4 overflow-x-auto pb-4 md:pb-0">
+                        <a href={route('admin.dashboard')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm whitespace-nowrap">Platform Overview</a>
+                        <a href={route('admin.subscription-plans.index')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm whitespace-nowrap">Subscription Plans</a>
+                        <a href={route('admin.gateway-settings.index')} className="px-6 py-3 bg-[#be1e2d] text-white font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-lg shadow-red-500/20 whitespace-nowrap">Payment Gateways</a>
+                        <a href={route('admin.redeem_codes.index')} className="px-6 py-3 bg-white text-gray-500 hover:text-[#be1e2d] font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-sm whitespace-nowrap">Activation Codes</a>
+                    </div>
 
                     {/* Stripe Configuration */}
                     <div className="bg-white/80 backdrop-blur-md overflow-hidden shadow-2xl sm:rounded-[3rem] border border-black/5 p-12">
