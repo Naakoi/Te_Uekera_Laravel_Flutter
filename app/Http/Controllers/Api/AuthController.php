@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -31,8 +33,12 @@ class AuthController extends Controller
             // Check for active sessions on other devices (both API tokens and Web sessions)
             $hasOtherTokens = $user->tokens()->exists();
             $hasWebSessions = false;
-            if (config('session.driver') === 'database') {
-                $hasWebSessions = \DB::table('sessions')->where('user_id', $user->id)->exists();
+            try {
+                if (config('session.driver') === 'database') {
+                    $hasWebSessions = DB::table('sessions')->where('user_id', $user->id)->exists();
+                }
+            } catch (\Exception $e) {
+                Log::warning('Web session check failed in API: ' . $e->getMessage());
             }
 
             if (($hasOtherTokens || $hasWebSessions) && !$request->logout_others) {
@@ -45,8 +51,12 @@ class AuthController extends Controller
             if ($request->logout_others) {
                 // Force logout from all other devices by deleting all tokens and web sessions
                 $user->tokens()->delete();
-                if (config('session.driver') === 'database') {
-                    \DB::table('sessions')->where('user_id', $user->id)->delete();
+                try {
+                    if (config('session.driver') === 'database') {
+                        DB::table('sessions')->where('user_id', $user->id)->delete();
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Web session delete failed in API: ' . $e->getMessage());
                 }
             }
         } catch (\Exception $e) {
@@ -88,10 +98,10 @@ class AuthController extends Controller
         try {
             if (config('session.driver') === 'database') {
                 // Delete all web sessions for this user
-                \DB::table('sessions')->where('user_id', $user->id)->delete();
+                DB::table('sessions')->where('user_id', $user->id)->delete();
             }
         } catch (\Exception $e) {
-            \Log::warning('Failed deleting web sessions API: ' . $e->getMessage());
+            Log::warning('Failed deleting web sessions API: ' . $e->getMessage());
         }
 
         return response()->json([
