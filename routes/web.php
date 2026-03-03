@@ -108,6 +108,7 @@ Route::middleware('auth')->group(function () {
         // Gateway Settings
         Route::get('/admin/gateway-settings', [GatewaySettingController::class, 'index'])->name('admin.gateway-settings.index');
         Route::post('/admin/gateway-settings', [GatewaySettingController::class, 'update'])->name('admin.gateway-settings.update');
+        Route::post('/admin/gateway-settings/test', [GatewaySettingController::class, 'testGateway'])->name('admin.gateway-settings.test');
     });
 });
 
