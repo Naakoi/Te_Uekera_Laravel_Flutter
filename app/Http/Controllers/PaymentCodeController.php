@@ -13,6 +13,10 @@ class PaymentCodeController extends Controller
 {
     public function index()
     {
+        if (auth()->user()->role !== 'admin' && !auth()->user()->can_create_vouchers) {
+            abort(403, 'Unauthorized. You do not have permission to access the code control panel.');
+        }
+
         return Inertia::render('Codes/Index', [
             'codes' => PaymentCode::with(['document', 'generator', 'user'])->latest()->paginate(20),
             'documents' => Document::all(),

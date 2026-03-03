@@ -13,6 +13,10 @@ class RedeemCodeController extends Controller
 {
     public function index()
     {
+        if (auth()->user()->role !== 'admin' && !auth()->user()->can_create_vouchers) {
+            abort(403, 'Unauthorized. You do not have permission to access the voucher control panel.');
+        }
+
         return Inertia::render('Admin/RedeemCodes', [
             'codes' => RedeemCode::with(['user', 'creator', 'document'])->latest()->paginate(20),
             'documents' => Document::all()
