@@ -8,6 +8,8 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,45 +36,47 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        try {
-            // Check for other active sessions (Tokens or DB sessions)
-            // Wrapped in try/catch to handle environments where sessions table 
-            // may not yet exist (e.g., before running migrations on production).
-            $hasOtherTokens = $user->tokens()->exists();
+        // Check if session store is available before attempting multi-device checks or regeneration
+        if ($request->hasSession()) {
+            try {
+                // Check for other active sessions (Tokens or DB sessions)
+                $hasOtherTokens = $user->tokens()->exists();
 
-            $hasOtherWebSessions = false;
-            if (config('session.driver') === 'database') {
-                $hasOtherWebSessions = \DB::table('sessions')
-                    ->where('user_id', $user->id)
-                    ->where('id', '!=', $request->session()->getId())
-                    ->exists();
-            }
-
-            if (($hasOtherTokens || $hasOtherWebSessions) && !$request->boolean('logout_others')) {
-                Auth::guard('web')->logout();
-
-                return back()->withErrors([
-                    'email' => 'Your account is already logged in on another device. Please sign out from other devices first.',
-                    'requires_logout_others' => true,
-                ]);
-            }
-
-            if ($request->boolean('logout_others')) {
-                $user->tokens()->delete();
+                $hasOtherWebSessions = false;
                 if (config('session.driver') === 'database') {
-                    \DB::table('sessions')
+                    $hasOtherWebSessions = DB::table('sessions')
                         ->where('user_id', $user->id)
                         ->where('id', '!=', $request->session()->getId())
-                        ->delete();
+                        ->exists();
                 }
-            }
-        } catch (\Exception $e) {
-            // If multi-device check fails (e.g., missing sessions table),
-            // log the warning and allow login to proceed normally.
-            \Log::warning('Multi-device session check failed: ' . $e->getMessage());
-        }
 
-        $request->session()->regenerate();
+                if (($hasOtherTokens || $hasOtherWebSessions) && !$request->boolean('logout_others')) {
+                    Auth::guard('web')->logout();
+
+                    return back()->withErrors([
+                        'email' => 'Your account is already logged in on another device. Please sign out from other devices first.',
+                        'requires_logout_others' => true,
+                    ]);
+                }
+
+                if ($request->boolean('logout_others')) {
+                    $user->tokens()->delete();
+                    if (config('session.driver') === 'database') {
+                        DB::table('sessions')
+                            ->where('user_id', $user->id)
+                            ->where('id', '!=', $request->session()->getId())
+                            ->delete();
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log and proceed - we don't want to block login if just the check fails
+                Log::warning('Multi-device session check failed: ' . $e->getMessage());
+            }
+
+            $request->session()->regenerate();
+        } else {
+            Log::error('Session store not detected during login for user: ' . $user->id);
+        }
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }
