@@ -6,39 +6,56 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentGatewaySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class GatewaySettingController extends Controller
 {
     public function index()
     {
-        Log::info('GatewaySettingController@index hit');
-        $settings = PaymentGatewaySetting::all()->keyBy('gateway');
-        Log::info('Settings fetched', ['count' => $settings->count()]);
+        try {
+            Log::info('GatewaySettingController@index hit');
+            
+            // Explicitly check for table existence to handle edge cases
+            if (!Schema::hasTable('payment_gateway_settings')) {
+                Log::error('Payment gateway settings table is missing!');
+                return redirect()->route('admin.dashboard')->with('error', 'System Error: Payment configuration table is missing. Please run migrations.');
+            }
 
-        // Ensure stripe and paypal records exist
-        if (!$settings->has('stripe')) {
-            Log::info('Creating stripe setting');
-            PaymentGatewaySetting::create([
-                'gateway' => 'stripe',
-                'config' => ['public_key' => '', 'secret_key' => '', 'webhook_secret' => ''],
-                'is_enabled' => false,
+            $settings = PaymentGatewaySetting::all();
+            $settingsGrouped = $settings->keyBy('gateway');
+            Log::info('Settings fetched', ['count' => $settings->count()]);
+
+            // Ensure stripe and paypal records exist if missing
+            if (!$settingsGrouped->has('stripe')) {
+                Log::info('Creating missing stripe setting record');
+                PaymentGatewaySetting::create([
+                    'gateway' => 'stripe',
+                    'config' => ['public_key' => '', 'secret_key' => '', 'webhook_secret' => ''],
+                    'is_enabled' => false,
+                ]);
+            }
+
+            if (!$settingsGrouped->has('paypal')) {
+                Log::info('Creating missing paypal setting record');
+                PaymentGatewaySetting::create([
+                    'gateway' => 'paypal',
+                    'config' => ['client_id' => '', 'client_secret' => '', 'app_id' => '', 'mode' => 'sandbox'],
+                    'is_enabled' => false,
+                ]);
+            }
+
+            // Refresh to get the created records
+            Log::info('Rendering Admin/GatewaySettings/Index');
+            return Inertia::render('Admin/GatewaySettings/Index', [
+                'settings' => PaymentGatewaySetting::all(),
             ]);
-        }
-
-        if (!$settings->has('paypal')) {
-            Log::info('Creating paypal setting');
-            PaymentGatewaySetting::create([
-                'gateway' => 'paypal',
-                'config' => ['client_id' => '', 'client_secret' => '', 'app_id' => '', 'mode' => 'sandbox'],
-                'is_enabled' => false,
+        } catch (\Exception $e) {
+            Log::error('GatewaySettings Index Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
             ]);
+            return redirect()->route('admin.dashboard')->with('error', 'Failed to load Payment Gateways: ' . $e->getMessage());
         }
-
-        Log::info('Rendering Admin/GatewaySettings/Index');
-        return Inertia::render('Admin/GatewaySettings/Index', [
-            'settings' => PaymentGatewaySetting::all(),
-        ]);
     }
 
     public function update(Request $request)

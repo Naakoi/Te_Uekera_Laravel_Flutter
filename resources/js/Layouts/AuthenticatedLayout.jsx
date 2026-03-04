@@ -3,7 +3,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import ActivationModal from '@/Components/ActivationModal';
 import { checkActivationStatus, getDeviceId } from '@/Utils/device';
 
@@ -238,7 +238,32 @@ export default function Authenticated({ user, header, children }) {
                 </header>
             )}
 
-            <main className="py-6 md:py-12 print:p-0">{children}</main>
+            <main className="py-6 md:py-12 print:p-0">
+                {/* Flash Messages */}
+                {usePage().props.flash && (usePage().props.flash.success || usePage().props.flash.error || usePage().props.flash.message) && (
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 animateIn">
+                        {usePage().props.flash.success && (
+                            <div className="bg-green-100 border-2 border-green-500 text-green-900 px-6 py-4 rounded-3xl font-black uppercase text-xs tracking-widest shadow-lg shadow-green-500/10 flex items-center justify-between">
+                                <span>{usePage().props.flash.success}</span>
+                                <button onClick={() => usePage().props.flash.success = null} className="opacity-50 hover:opacity-100">×</button>
+                            </div>
+                        )}
+                        {usePage().props.flash.error && (
+                            <div className="bg-red-100 border-2 border-red-500 text-red-900 px-6 py-4 rounded-3xl font-black uppercase text-xs tracking-widest shadow-lg shadow-red-500/10 flex items-center justify-between">
+                                <span>{usePage().props.flash.error}</span>
+                                <button onClick={() => usePage().props.flash.error = null} className="opacity-50 hover:opacity-100">×</button>
+                            </div>
+                        )}
+                        {usePage().props.flash.message && (
+                            <div className="bg-blue-100 border-2 border-blue-500 text-blue-900 px-6 py-4 rounded-3xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-500/10 flex items-center justify-between">
+                                <span>{usePage().props.flash.message}</span>
+                                <button onClick={() => usePage().props.flash.message = null} className="opacity-50 hover:opacity-100">×</button>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {children}
+            </main>
 
             {/* Mobile Bottom Navigation */}
             <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t-2 border-black/10 h-16 flex items-center justify-around z-[110] print:hidden shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">

@@ -43,6 +43,11 @@ class HandleInertiaRequests extends Middleware
                     'has_active_subscription' => $request->user()->hasActiveSubscription(),
                 ] : null,
             ],
+            'flash' => [
+                'message' => $request->session()->get('message'),
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+            ],
         ];
     }
 }
