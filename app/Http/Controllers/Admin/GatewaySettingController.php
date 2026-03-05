@@ -46,11 +46,20 @@ class GatewaySettingController extends Controller
                 ]);
             }
 
+            $systemSettings = [];
+            try {
+                if (Schema::hasTable('system_settings')) {
+                    $systemSettings = SystemSetting::all()->keyBy('key');
+                }
+            } catch (\Exception $e) {
+                Log::warning('System settings table check failed: ' . $e->getMessage());
+            }
+
             // Refresh to get the created records
             Log::info('Rendering Admin/GatewaySettings/Index');
             return Inertia::render('Admin/GatewaySettings/Index', [
                 'settings' => PaymentGatewaySetting::all(),
-                'systemSettings' => SystemSetting::all()->keyBy('key'),
+                'systemSettings' => $systemSettings,
             ]);
         } catch (\Exception $e) {
             Log::error('GatewaySettings Index Error: ' . $e->getMessage(), [

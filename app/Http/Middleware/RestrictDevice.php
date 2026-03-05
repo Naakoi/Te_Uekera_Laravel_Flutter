@@ -16,7 +16,12 @@ class RestrictDevice
     public function handle(Request $request, Closure $next): Response
     {
         // 1. Check if the restriction is enabled
-        if (!\App\Models\SystemSetting::getVal('restrict_mobile_access', false)) {
+        try {
+            if (!\App\Models\SystemSetting::getVal('restrict_mobile_access', false)) {
+                return $next($request);
+            }
+        } catch (\Exception $e) {
+            // If table doesn't exist yet, just proceed
             return $next($request);
         }
 
@@ -26,7 +31,7 @@ class RestrictDevice
         }
 
         // 3. Check for restricted devices/browsers (iPhone or Safari)
-        $userAgent = $request->header('User-Agent');
+        $userAgent = $request->header('User-Agent') ?? '';
 
         // Allow access to the showcase page and its assets to avoid redirect loops
         if ($request->is('showcase.html') || $request->is('assets/*') || $request->is('logo.png')) {
