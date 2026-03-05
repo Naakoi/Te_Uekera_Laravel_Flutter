@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentGatewaySetting;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -49,6 +50,7 @@ class GatewaySettingController extends Controller
             Log::info('Rendering Admin/GatewaySettings/Index');
             return Inertia::render('Admin/GatewaySettings/Index', [
                 'settings' => PaymentGatewaySetting::all(),
+                'systemSettings' => SystemSetting::all()->keyBy('key'),
             ]);
         } catch (\Exception $e) {
             Log::error('GatewaySettings Index Error: ' . $e->getMessage(), [
@@ -129,5 +131,17 @@ class GatewaySettingController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'Invalid gateway.']);
+    }
+
+    public function updateSystemSetting(Request $request)
+    {
+        $request->validate([
+            'key' => 'required|string',
+            'value' => 'required',
+        ]);
+
+        SystemSetting::setVal($request->key, $request->value);
+
+        return redirect()->back()->with('success', 'System setting updated successfully.');
     }
 }

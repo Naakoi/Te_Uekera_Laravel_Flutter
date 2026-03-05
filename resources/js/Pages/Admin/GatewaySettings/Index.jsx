@@ -3,7 +3,9 @@ import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import axios from 'axios';
 
-export default function Index({ auth, settings }) {
+export default function Index({ auth, settings, systemSettings }) {
+    const restrictMobile = systemSettings?.restrict_mobile_access;
+    const [isRestricting, setIsRestricting] = useState(restrictMobile ? restrictMobile.value === '1' : false);
     const stripeSetting = (settings || []).find(s => s.gateway === 'stripe');
     const paypalSetting = (settings || []).find(s => s.gateway === 'paypal');
 
@@ -47,6 +49,19 @@ export default function Index({ auth, settings }) {
         } finally {
             setTesting(prev => ({ ...prev, [gateway]: false }));
         }
+    };
+
+    const toggleMobileRestriction = (enabled) => {
+        setIsRestricting(enabled);
+        router.post(route('admin.system-settings.update'), {
+            key: 'restrict_mobile_access',
+            value: enabled ? '1' : '0'
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Success feedback handled by session flash messages normally
+            }
+        });
     };
 
     return (
@@ -254,6 +269,39 @@ export default function Index({ auth, settings }) {
                         </form>
                     </div>
 
+                    {/* Platform Security */}
+                    <div className="bg-white/80 backdrop-blur-md overflow-hidden shadow-2xl sm:rounded-[3rem] border border-black/5 p-12">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter italic text-[#be1e2d]">Platform Security</h2>
+                                <p className="mt-2 text-sm text-gray-500 font-bold uppercase tracking-widest opacity-60">Control access rules for different device types.</p>
+                            </div>
+                        </div>
+
+                        <div className="mt-10 p-8 bg-[#f4f1ea] rounded-[2rem] border border-black/5 flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                                <div className="p-4 bg-white rounded-2xl shadow-sm text-2xl">📱</div>
+                                <div>
+                                    <h3 className="font-black text-gray-900 uppercase tracking-tight">Restrict Mobile Browsing</h3>
+                                    <p className="text-xs text-gray-500 font-bold">Prevent iPhone and Safari users from viewing the website. Redirects to App Showcase.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${isRestricting ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                    {isRestricting ? 'Restricted' : 'Open Access'}
+                                </span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={isRestricting}
+                                        onChange={e => toggleMobileRestriction(e.target.checked)}
+                                    />
+                                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#be1e2d]"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </AuthenticatedLayout>

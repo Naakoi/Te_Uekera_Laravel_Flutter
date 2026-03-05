@@ -45,6 +45,7 @@ class ApiClient {
             }
           }
           options.headers['X-Device-Id'] = deviceId;
+          options.headers['X-App-Platform'] = 'mobile_app';
 
           return handler.next(options);
         },
