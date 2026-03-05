@@ -29852,7 +29852,7 @@ $S:2}
 A.aBh.prototype={
 $1(a){var s=A.dE().b
 s=s==null?null:s.canvasKitBaseUrl
-return(s==null?"https://www.gstatic.com/flutter-canvaskit/327ed814500baca0480a02f8555aa84a9afe32bf/":s)+a},
+return(s==null?"https://www.gstatic.com/flutter-canvaskit/e4b8dca3f1b4ede4c30371002441c88c12187ed6/":s)+a},
 $S:91}
 A.Po.prototype={
 gC(a){var s=this.a
@@ -93694,6 +93694,7 @@ break
 case 14:case 10:k=a.b
 k===$&&A.a()
 k.m(0,"X-Device-Id",h)
+a.b.m(0,"X-App-Platform","mobile_app")
 q=b.mb(0,a)
 s=1
 break
