@@ -71,12 +71,12 @@ class PayPalController extends Controller
         if (isset($response['id']) && $response['status'] == 'CREATED') {
             foreach ($response['links'] as $links) {
                 if ($links['rel'] == 'approve') {
-                    return redirect()->away($links['href']);
+                    return response()->json(['url' => $links['href']]);
                 }
             }
         }
 
-        return redirect()->route('subscription.index')->with('error', 'Something went wrong with PayPal.');
+        return response()->json(['error' => 'Something went wrong with PayPal.'], 500);
     }
 
     public function success(Request $request)
