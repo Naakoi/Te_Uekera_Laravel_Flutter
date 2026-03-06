@@ -133,7 +133,29 @@ export default function Show({ auth, document, isPurchased }) {
                                                         <span className="text-6xl font-black text-[#be1e2d] italic tracking-tighter font-sans">${document.price}</span>
                                                     </div>
                                                     <button
-                                                        onClick={() => router.post(route('stripe.checkout'), { document_id: document.id })}
+                                                        onClick={async () => {
+                                                            try {
+                                                                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                                                                const response = await fetch(route('stripe.checkout'), {
+                                                                    method: 'POST',
+                                                                    headers: {
+                                                                        'Content-Type': 'application/json',
+                                                                        'Accept': 'application/json',
+                                                                        'X-CSRF-TOKEN': csrfToken,
+                                                                    },
+                                                                    body: JSON.stringify({ document_id: document.id }),
+                                                                });
+                                                                const data = await response.json();
+                                                                if (data?.url) {
+                                                                    window.location.href = data.url;
+                                                                } else {
+                                                                    alert('Payment setup failed. Please try again.');
+                                                                }
+                                                            } catch (error) {
+                                                                alert('Payment failed. Please try again.');
+                                                                console.error('Payment error:', error);
+                                                            }
+                                                        }}
                                                         className="px-10 py-5 bg-[#be1e2d] text-white font-black rounded-2xl shadow-2xl shadow-red-500/20 hover:bg-black hover:shadow-black/20 transition-all uppercase tracking-widest text-sm"
                                                     >
                                                         Pay via Stripe
