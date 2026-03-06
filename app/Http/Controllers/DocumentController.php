@@ -204,12 +204,7 @@ class DocumentController extends Controller
                 return $this->placeholderPngResponse("PDF not found");
             }
 
-            if (!extension_loaded('imagick')) {
-                Log::error("Imagick not available and page not pre-generated for doc {$document->id} page $page.");
-                return $this->placeholderPngResponse("Imagick not available");
-            }
-
-            Log::info("Generating page $page on-the-fly for doc {$document->id} via Imagick");
+            Log::info("Generating page $page on-the-fly for doc {$document->id}");
 
             try {
                 // Ensure the cache directory exists
@@ -362,7 +357,7 @@ class DocumentController extends Controller
         $png = base64_decode(
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
         );
-        return response($png, 200, [
+        return response($png, 404, [
             'Content-Type' => 'image/png',
             'Cache-Control' => 'no-store',
             'X-Page-Error' => substr($reason, 0, 200),
