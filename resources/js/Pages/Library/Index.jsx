@@ -179,7 +179,20 @@ export default function Index({ auth, documents }) {
                                             onClick={(e) => !isAvailable && e.preventDefault()}
                                         >
                                             {doc.thumbnail_path ? (
-                                                <img src={`/storage/${doc.thumbnail_path}`} alt={doc.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                <img
+                                                    src={`/storage/${doc.thumbnail_path}`}
+                                                    alt={doc.title}
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                    onError={(e) => {
+                                                        const page1Url = route('documents.page', { document: doc.id, page: 1 });
+                                                        if (e.target.src !== page1Url) {
+                                                            e.target.src = page1Url;
+                                                        } else {
+                                                            e.target.onerror = null;
+                                                            e.target.src = '/images/placeholder-cover.png';
+                                                        }
+                                                    }}
+                                                />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-black/10"><svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg></div>
                                             )}
@@ -245,7 +258,20 @@ export default function Index({ auth, documents }) {
                                     >
                                         <div className="w-24 md:w-40 h-full bg-[#f4f1ea] relative shrink-0">
                                             {doc.thumbnail_path ? (
-                                                <img src={`/storage/${doc.thumbnail_path}`} alt={doc.title} className="w-full h-full object-cover" />
+                                                <img
+                                                    src={`/storage/${doc.thumbnail_path}`}
+                                                    alt={doc.title}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        const page1Url = route('documents.page', { document: doc.id, page: 1 });
+                                                        if (e.target.src !== page1Url) {
+                                                            e.target.src = page1Url;
+                                                        } else {
+                                                            e.target.onerror = null;
+                                                            e.target.src = '/images/placeholder-cover.png';
+                                                        }
+                                                    }}
+                                                />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-black/10"><svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg></div>
                                             )}

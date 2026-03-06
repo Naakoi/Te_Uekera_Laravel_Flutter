@@ -66,6 +66,15 @@ export default function Show({ auth, document, isPurchased }) {
                                                 src={`/storage/${document.thumbnail_path}`}
                                                 alt={document.title}
                                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                onError={(e) => {
+                                                    const page1Url = route('documents.page', { document: document.id, page: 1 });
+                                                    if (e.target.src !== page1Url) {
+                                                        e.target.src = page1Url;
+                                                    } else {
+                                                        e.target.onerror = null;
+                                                        e.target.src = '/images/placeholder-cover.png';
+                                                    }
+                                                }}
                                             />
                                         ) : (
                                             <div className="w-full h-full flex flex-col items-center justify-center text-white/20 p-8 text-center bg-gradient-to-br from-gray-800 to-black">

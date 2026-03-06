@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/data/models/document_model.dart';
+import 'package:mobile/core/utils/api_client.dart';
 import 'package:mobile/presentation/blocs/document_bloc.dart';
 import 'package:mobile/presentation/blocs/document_state.dart';
 import 'package:mobile/presentation/blocs/auth/auth_bloc.dart';
@@ -577,8 +578,16 @@ class _LibraryPageState extends State<LibraryPage> {
                     color: const Color(0xFFe5e5e5),
                     child: document.thumbnailPath != null
                         ? Image.network(
-                            'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${document.thumbnailPath}',
+                            '${ApiClient.imagesBaseUrl}${document.thumbnailPath}',
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                                  child: Icon(
+                                    Icons.newspaper,
+                                    color: Colors.grey,
+                                    size: 32,
+                                  ),
+                                ),
                           )
                         : const Center(
                             child: Icon(Icons.newspaper, color: Colors.grey),
@@ -707,7 +716,7 @@ class _LibraryPageState extends State<LibraryPage> {
             image: document.thumbnailPath != null
                 ? DecorationImage(
                     image: NetworkImage(
-                      'https://phplaravel-1593166-6235114.cloudwaysapps.com/api/images/${document.thumbnailPath}',
+                      '${ApiClient.imagesBaseUrl}${document.thumbnailPath}',
                     ),
                     fit: BoxFit.cover,
                   )
