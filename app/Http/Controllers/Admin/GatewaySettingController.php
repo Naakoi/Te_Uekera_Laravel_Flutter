@@ -48,10 +48,10 @@ class GatewaySettingController extends Controller
 
             $systemSettings = [];
             try {
-                if (Schema::hasTable('system_settings')) {
+                if (Schema::hasTable('system_settings') && class_exists(SystemSetting::class)) {
                     $systemSettings = SystemSetting::all()->keyBy('key');
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::warning('System settings table check failed: ' . $e->getMessage());
             }
 

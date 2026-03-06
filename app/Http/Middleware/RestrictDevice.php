@@ -17,11 +17,11 @@ class RestrictDevice
     {
         // 1. Check if the restriction is enabled
         try {
-            if (!\App\Models\SystemSetting::getVal('restrict_mobile_access', false)) {
+            if (class_exists(\App\Models\SystemSetting::class) && !\App\Models\SystemSetting::getVal('restrict_mobile_access', false)) {
                 return $next($request);
             }
-        } catch (\Exception $e) {
-            // If table doesn't exist yet, just proceed
+        } catch (\Throwable $e) {
+            // If table or class doesn't exist yet, just proceed
             return $next($request);
         }
 
