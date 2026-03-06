@@ -1,17 +1,36 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
+import axios from 'axios';
+import { useState } from 'react';
 
 export default function Index({ auth, plans, currentSubscription }) {
+    const [paying, setPaying] = useState(null);
+
     const { data: redeemData, setData: setRedeemData, post: postRedeem, processing: redeemProcessing, reset: resetRedeem } = useForm({
         code: '',
         device_id: '',
     });
 
-    const handleSubscription = (planId, gateway) => {
-        if (gateway === 'stripe') {
-            router.post(route('stripe.checkout'), { plan_id: planId });
-        } else if (gateway === 'paypal') {
-            router.post(route('paypal.checkout'), { plan_id: planId });
+    const handleSubscription = async (planId, gateway) => {
+        if (paying) return;
+        setPaying(planId + '_' + gateway);
+        try {
+            if (gateway === 'stripe') {
+                const response = await axios.post(route('stripe.checkout'), { plan_id: planId });
+                if (response.data?.url) {
+                    window.location.href = response.data.url;
+                }
+            } else if (gateway === 'paypal') {
+                const response = await axios.post(route('paypal.checkout'), { plan_id: planId });
+                if (response.data?.url) {
+                    window.location.href = response.data.url;
+                }
+            }
+        } catch (error) {
+            alert('Payment failed. Please try again.');
+            console.error('Payment error:', error);
+        } finally {
+            setPaying(null);
         }
     };
 
@@ -185,15 +204,17 @@ export default function Index({ auth, plans, currentSubscription }) {
                                 <div className="space-y-3">
                                     <button
                                         onClick={() => handleSubscription(plan.id, 'stripe')}
-                                        className="w-full py-6 bg-[#be1e2d] text-white font-black rounded-3xl hover:bg-black transition-all shadow-xl shadow-red-500/20 uppercase tracking-[0.2em] text-[10px]"
+                                        disabled={!!paying}
+                                        className="w-full py-6 bg-[#be1e2d] text-white font-black rounded-3xl hover:bg-black transition-all shadow-xl shadow-red-500/20 uppercase tracking-[0.2em] text-[10px] disabled:opacity-60"
                                     >
-                                        Debit / Credit Card
+                                        {paying === plan.id + '_stripe' ? 'Redirecting...' : 'Debit / Credit Card'}
                                     </button>
                                     <button
                                         onClick={() => handleSubscription(plan.id, 'paypal')}
-                                        className="w-full py-6 bg-white text-black border-2 border-black/10 font-black rounded-3xl hover:bg-[#0070ba] hover:text-white hover:border-transparent transition-all uppercase tracking-[0.2em] text-[10px]"
+                                        disabled={!!paying}
+                                        className="w-full py-6 bg-white text-black border-2 border-black/10 font-black rounded-3xl hover:bg-[#0070ba] hover:text-white hover:border-transparent transition-all uppercase tracking-[0.2em] text-[10px] disabled:opacity-60"
                                     >
-                                        PayPal Checkout
+                                        {paying === plan.id + '_paypal' ? 'Redirecting...' : 'PayPal Checkout'}
                                     </button>
                                 </div>
                             </div>

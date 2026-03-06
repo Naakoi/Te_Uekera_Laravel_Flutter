@@ -66,7 +66,7 @@ class StripeController extends Controller
             'cancel_url' => $cancelUrl,
         ]);
 
-        return redirect($session->url);
+        return response()->json(['url' => $session->url]);
     }
 
     public function apiCheckout(Request $request)
