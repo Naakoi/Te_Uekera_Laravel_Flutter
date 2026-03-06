@@ -135,7 +135,8 @@ export default function Show({ auth, document, isPurchased }) {
                                                     <button
                                                         onClick={async () => {
                                                             try {
-                                                                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                                                                // Use window.document to avoid collision with the 'document' prop
+                                                                const csrfToken = window.document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                                                                 const response = await fetch(route('stripe.checkout'), {
                                                                     method: 'POST',
                                                                     headers: {
