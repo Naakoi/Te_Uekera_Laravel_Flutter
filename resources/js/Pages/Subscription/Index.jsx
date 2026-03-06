@@ -1,6 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
-import axios from 'axios';
 import { useState } from 'react';
 
 export default function Index({ auth, plans, currentSubscription }) {
@@ -15,16 +14,25 @@ export default function Index({ auth, plans, currentSubscription }) {
         if (paying) return;
         setPaying(planId + '_' + gateway);
         try {
-            if (gateway === 'stripe') {
-                const response = await axios.post(route('stripe.checkout'), { plan_id: planId });
-                if (response.data?.url) {
-                    window.location.href = response.data.url;
-                }
-            } else if (gateway === 'paypal') {
-                const response = await axios.post(route('paypal.checkout'), { plan_id: planId });
-                if (response.data?.url) {
-                    window.location.href = response.data.url;
-                }
+            const routeName = gateway === 'stripe' ? 'stripe.checkout' : 'paypal.checkout';
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+            // Use native fetch to bypass Inertia's global axios interceptor
+            const response = await fetch(route(routeName), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ plan_id: planId }),
+            });
+
+            const data = await response.json();
+            if (data?.url) {
+                window.location.href = data.url;
+            } else {
+                alert('Payment setup failed. Please try again.');
             }
         } catch (error) {
             alert('Payment failed. Please try again.');
