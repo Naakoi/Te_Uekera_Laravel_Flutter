@@ -546,13 +546,33 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'SINGLE EDITION PRICE',
+                            'PERMANENT ACCESS PRICE',
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
                               color: Colors.grey,
                             ),
                           ),
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFbe1e2d).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'LIFETIME OWNERSHIP',
+                              style: GoogleFonts.inter(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFFbe1e2d),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
                           Text(
                             '\$${document.price}',
                             style: GoogleFonts.inter(

@@ -129,8 +129,11 @@ export default function Show({ auth, document, isPurchased }) {
                                             <div className="space-y-6">
                                                 <div className="flex items-end justify-between border-b-2 border-black/5 pb-8">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Single Edition Price</span>
-                                                        <span className="text-6xl font-black text-[#be1e2d] italic tracking-tighter font-sans">${document.price}</span>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Permanent Access Price</span>
+                                                            <span className="bg-[#be1e2d]/10 text-[#be1e2d] text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">Lifetime Ownership</span>
+                                                        </div>
+                                                        <span className="text-6xl font-black text-[#be1e2d] italic tracking-tighter font-display leading-none">${document.price}</span>
                                                     </div>
                                                     <button
                                                         onClick={async () => {
