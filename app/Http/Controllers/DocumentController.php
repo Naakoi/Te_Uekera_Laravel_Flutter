@@ -198,7 +198,14 @@ class DocumentController extends Controller
         if ($token)
             $token = str_replace('Bearer ', '', $token);
 
-        Log::info("PAGE_REQ: Doc {$document->id}, Page $page. Dev: $deviceId, Plat: $platform, Token: " . ($token ? "Present" : "Missing"));
+        // Debug: Log ALL headers to see what is actually arriving
+        $allHeaders = collect(request()->header())->map(function ($item) {
+            return is_array($item) ? implode(', ', $item) : $item;
+        })->toArray();
+        Log::info("PAGE_REQ: Doc {$document->id}, Page $page. Dev: $deviceId, Plat: $platform, Token: " . ($token ? "Present" : "Missing"), [
+            'raw_token' => $token ? substr($token, 0, 10) . '...' : 'NONE',
+            'headers' => $allHeaders
+        ]);
 
         if ($page !== 1 && !$this->hasAccess($document)) {
             Log::warning("PAGE_DENIED: Doc {$document->id}, Page $page. Dev: $deviceId");
