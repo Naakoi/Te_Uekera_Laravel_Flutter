@@ -186,7 +186,7 @@ class DocumentController extends Controller
 
     public function pageImage(Document $document, int $page)
     {
-        // Version 1.1.4 - Max Reliability Mode
+        // Version 1.1.5 - Max Reliability Mode
         @ini_set('memory_limit', '2048M');
         @set_time_limit(90);
 
@@ -306,7 +306,8 @@ class DocumentController extends Controller
      */
     public function imagickDiag(Document $document)
     {
-        // Version 1.1.4 - Deep Diag
+        // Version 1.1.5 - Max Diag
+        @ini_set('memory_limit', '2048M');
         $pdfPath = $this->getAbsolutePdfPath($document->file_path);
 
         $tokenRaw = request('token') ?? request()->bearerToken() ?? request()->header('X-Authorization');
@@ -321,7 +322,7 @@ class DocumentController extends Controller
             $user = auth('sanctum')->user() ?? auth()->user();
 
         $info = [
-            'diag_version' => '1.1.4',
+            'diag_version' => '1.1.5',
             'time' => now()->toDateTimeString(),
             'imagick_loaded' => extension_loaded('imagick'),
             'pdf_file_exists' => $pdfPath ? file_exists($pdfPath) : false,
@@ -331,6 +332,11 @@ class DocumentController extends Controller
             'has_full_access' => $this->hasAccess($document, $user),
             'memory_limit' => ini_get('memory_limit'),
             'disable_functions' => ini_get('disable_functions'),
+            'headers_captured' => [
+                'Authorization' => request()->hasHeader('Authorization') ? 'PRESENT' : 'MISSING',
+                'X-Authorization' => request()->hasHeader('X-Authorization') ? 'PRESENT' : 'MISSING',
+                'X-App-Platform' => request()->header('X-App-Platform', 'NONE'),
+            ],
         ];
 
         return response()->json($info);
@@ -371,6 +377,10 @@ class DocumentController extends Controller
             $user = auth('sanctum')->user() ?? auth()->user();
             if (!$user) {
                 $token = request('token') ?? request()->bearerToken() ?? request()->header('X-Authorization');
+
+                // Detailed debug logging
+                Log::info("hasAccess Entry: Token=" . ($token ? 'YES' : 'NO') . " AuthHeader=" . (request()->hasHeader('Authorization') ? 'YES' : 'NO') . " XAuthHeader=" . (request()->hasHeader('X-Authorization') ? 'YES' : 'NO'));
+
                 if ($token) {
                     $token = str_replace('Bearer ', '', $token);
                     $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
