@@ -48,12 +48,12 @@ Route::get('/debug-log', function () {
     if (!file_exists($path))
         return response()->json(['error' => 'No log file found']);
 
-    // Read last 2 KB
+    // Read last 10 KB
     $size = filesize($path);
     $fp = fopen($path, 'r');
-    if ($size > 2048)
-        fseek($fp, -2048, SEEK_END);
-    $content = fread($fp, 2048);
+    if ($size > 10240)
+        fseek($fp, -10240, SEEK_END);
+    $content = fread($fp, 10240);
     fclose($fp);
 
     return response($content)->header('Content-Type', 'text/plain');
