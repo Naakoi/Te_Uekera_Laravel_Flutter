@@ -422,16 +422,16 @@ class DocumentController extends Controller
         // If not authenticated, try to manually identify from token (any parameter)
         if (!$user) {
             $token = request('token') ?? request()->bearerToken();
+            Log::info("hasAccess: No user session. Checking token: " . ($token ? "Found (Starts with " . substr($token, 0, 5) . ")" : "Not Found"));
+
             if ($token) {
-                // If token is base64 encoded or has extra parts, this might fail, 
-                // but usually Sanctum handles the | separator.
                 $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
                 if ($accessToken && $accessToken->tokenable) {
                     $user = $accessToken->tokenable;
                     auth('sanctum')->setUser($user);
-                    Log::info("hasAccess: User identified from token: {$user->id}");
+                    Log::info("hasAccess: User identified from token: {$user->id} ({$user->email})");
                 } else {
-                    Log::warning("hasAccess: Token provided but user not found for token: " . substr($token, 0, 10) . "...");
+                    Log::warning("hasAccess: Token was provided but is INVALID or EXPIRED.");
                 }
             }
         }
@@ -439,19 +439,16 @@ class DocumentController extends Controller
         /** @var \App\Models\User $user */
         if ($user) {
             if ($user->isAdmin() || $user->isStaff()) {
-                Log::info("hasAccess: Access granted for Admin/Staff user: {$user->id}");
                 return true;
             }
 
             // Check for account-based purchase
             if ($user->purchases()->where('document_id', $document->id)->exists()) {
-                Log::info("hasAccess: Access granted for purchase: user {$user->id}, doc {$document->id}");
                 return true;
             }
 
             // Check for active subscription
             if ($user->hasActiveSubscription()) {
-                Log::info("hasAccess: Access granted for subscription: user {$user->id}");
                 return true;
             }
         }
