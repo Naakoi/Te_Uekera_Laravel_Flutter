@@ -317,24 +317,33 @@ class DocumentController extends Controller
      */
     public function imagickDiag(Document $document)
     {
-        // Version 1.0.6 - Use this to confirm deployment
-        $pdfPath = storage_path('app/' . $document->file_path);
+        // Version 1.0.8 - Use this to confirm deployment
+        $pdfPath = $this->getAbsolutePdfPath($document->file_path);
+
+        $gsVersion = "NOT FOUND";
+        if (function_exists('exec')) {
+            $out = [];
+            $ret = -1;
+            exec("gs --version 2>&1", $out, $ret);
+            if ($ret === 0 && !empty($out)) {
+                $gsVersion = $out[0];
+            }
+        }
+
         $info = [
-            'diag_version' => '1.0.7',
+            'diag_version' => '1.0.8',
             'imagick_loaded' => extension_loaded('imagick'),
-            'pdf_file_exists' => file_exists($pdfPath),
+            'gs_version' => $gsVersion,
+            'pdf_file_exists' => $pdfPath ? file_exists($pdfPath) : false,
             'pdf_path' => $pdfPath,
+            'pdf_size' => $pdfPath ? filesize($pdfPath) : 0,
             'exec_disabled' => in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))),
             'disable_functions' => ini_get('disable_functions'),
             'page_count_db' => $document->page_count,
-            'pages_dir_exists' => is_dir(storage_path("app/pages/{$document->id}")),
-            'request_method' => request()->method(),
-            'request_url' => request()->fullUrl(),
-            'request_headers' => request()->headers->all(),
-            'identified_user' => auth('sanctum')->user() ? auth('sanctum')->user()->id : 'Guest',
-            'token_provided' => request('token') ? substr(request('token'), 0, 10) . '...' : 'None',
+            'storage_pages_writable' => is_writable(storage_path('app/pages')),
+            'identified_user' => auth('sanctum')->id() ?? 'Guest',
+            'app_platform' => request()->header('X-App-Platform') ?? 'Unknown',
             'device_id_provided' => request('device_id') ?? request()->header('X-Device-Id') ?? 'None',
-            'app_platform' => request()->header('X-App-Platform') ?? 'None',
         ];
 
         // Manual token check same as hasAccess
