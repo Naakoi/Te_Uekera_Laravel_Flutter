@@ -317,7 +317,7 @@ class DocumentController extends Controller
      */
     public function imagickDiag(Document $document)
     {
-        // Version 1.0.9 - Lightweight diag
+        // Version 1.1.1 - Enhanced Diag
         $pdfPath = $this->getAbsolutePdfPath($document->file_path);
 
         $gsVersion = "NOT FOUND";
@@ -338,8 +338,21 @@ class DocumentController extends Controller
             }
         }
 
+        $user = auth('sanctum')->user() ?? auth()->user();
+        if (!$user) {
+            $token = request('token') ?? request()->bearerToken();
+            if ($token) {
+                $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                if ($accessToken && $accessToken->tokenable) {
+                    $user = $accessToken->tokenable;
+                }
+            }
+        }
+
+        $deviceId = request('device_id') ?? request()->header('X-Device-Id');
+
         $info = [
-            'diag_version' => '1.0.9',
+            'diag_version' => '1.1.1',
             'time' => now()->toDateTimeString(),
             'imagick_loaded' => extension_loaded('imagick'),
             'gs_version' => $gsVersion,
@@ -347,47 +360,26 @@ class DocumentController extends Controller
             'pdf_file_exists' => $pdfPath ? file_exists($pdfPath) : false,
             'pdf_path' => $pdfPath,
             'pdf_size' => $pdfPath ? filesize($pdfPath) : 0,
+            'identified_user_id' => $user ? $user->id : 'Guest',
+            'identified_user_email' => $user ? $user->email : 'None',
+            'device_id_provided' => $deviceId ?? 'None',
+            'has_full_access' => $this->hasAccess($document, $user),
             'memory_limit' => ini_get('memory_limit'),
-            'max_execution_time' => ini_get('max_execution_time'),
-            'storage_pages_writable' => is_writable(storage_path('app/pages')),
-            'identified_user' => auth('sanctum')->id() ?? 'Guest',
-            'device_id_provided' => request('device_id') ?? request()->header('X-Device-Id') ?? 'None',
+            'disable_functions' => ini_get('disable_functions'),
         ];
 
-        // test ping ONLY
         if ($info['imagick_loaded'] && $info['pdf_file_exists']) {
             try {
                 $im = new \Imagick();
+                // Resource limits to prevent server crash
+                $im->setResourceLimit(\Imagick::RESOURCETYPE_MEMORY, 256 * 1024 * 1024); // 256MB
+                $im->setResourceLimit(\Imagick::RESOURCETYPE_MAP, 256 * 1024 * 1024);    // 256MB
                 $im->pingImage($pdfPath);
                 $info['imagick_page_count'] = $im->getNumberImages();
                 $im->clear();
                 $im->destroy();
             } catch (\Throwable $e) {
-                $info['imagick_ping_error'] = $e->getMessage();
-            }
-
-            try {
-                $im2 = new \Imagick();
-                try {
-                    $im2->readImage($pdfPath . '[0]');
-                } catch (\Throwable $e2) {
-                    if (str_contains($e2->getMessage(), 'security policy')) {
-                        $im2->clear();
-                        $im2->setColorspace(\Imagick::COLORSPACE_SRGB);
-                        $im2->readImage($pdfPath . '[0]');
-                    } else {
-                        throw $e2;
-                    }
-                }
-
-                $info['imagick_read_page1'] = 'OK';
-                $info['colorspace'] = $im2->getImageColorspace();
-                $info['colorspace_name'] = $this->getColorspaceName($im2->getImageColorspace());
-                $info['image_type'] = $im2->getImageType();
-                $im2->clear();
-                $im2->destroy();
-            } catch (\Throwable $e) {
-                $info['imagick_read_error'] = $e->getMessage();
+                $info['imagick_ping_error'] = substr($e->getMessage(), 0, 100);
             }
         }
 
