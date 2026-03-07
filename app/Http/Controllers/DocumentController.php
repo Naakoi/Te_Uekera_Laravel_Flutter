@@ -61,7 +61,10 @@ class DocumentController extends Controller
     public function apiIndex()
     {
         try {
-            \Illuminate\Support\Facades\Log::info("API Access: Editions list requested from origin: " . request()->header('Origin') . " IP: " . request()->ip());
+            $platform = request()->header('X-App-Platform', 'web/unknown');
+            \Illuminate\Support\Facades\Log::info("API Access: Editions list requested. Platform: $platform, IP: " . request()->ip(), [
+                'headers' => collect(request()->header())->map(fn($h) => $h[0])->toArray()
+            ]);
             $documents = Document::latest()->get();
             $deviceId = request('device_id') ?? request()->cookie('device_id') ?? request()->header('X-Device-Id');
 
@@ -329,7 +332,7 @@ class DocumentController extends Controller
             $user = auth('sanctum')->user() ?? auth()->user();
 
         $info = [
-            'diag_version' => '1.1.5',
+            'diag_version' => '1.1.6',
             'time' => now()->toDateTimeString(),
             'imagick_loaded' => extension_loaded('imagick'),
             'pdf_file_exists' => $pdfPath ? file_exists($pdfPath) : false,
