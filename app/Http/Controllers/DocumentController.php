@@ -291,7 +291,7 @@ class DocumentController extends Controller
         // Version 1.0.6 - Use this to confirm deployment
         $pdfPath = storage_path('app/' . $document->file_path);
         $info = [
-            'diag_version' => '1.0.6',
+            'diag_version' => '1.0.7',
             'imagick_loaded' => extension_loaded('imagick'),
             'pdf_file_exists' => file_exists($pdfPath),
             'pdf_path' => $pdfPath,
@@ -299,7 +299,25 @@ class DocumentController extends Controller
             'disable_functions' => ini_get('disable_functions'),
             'page_count_db' => $document->page_count,
             'pages_dir_exists' => is_dir(storage_path("app/pages/{$document->id}")),
+            'request_method' => request()->method(),
+            'request_url' => request()->fullUrl(),
+            'request_headers' => request()->headers->all(),
+            'identified_user' => auth('sanctum')->user() ? auth('sanctum')->user()->id : 'Guest',
+            'token_provided' => request('token') ? substr(request('token'), 0, 10) . '...' : 'None',
+            'device_id_provided' => request('device_id') ?? request()->header('X-Device-Id') ?? 'None',
+            'app_platform' => request()->header('X-App-Platform') ?? 'None',
         ];
+
+        // Manual token check same as hasAccess
+        if (!$info['identified_user'] || $info['identified_user'] === 'Guest') {
+            $token = request('token') ?? request()->bearerToken();
+            if ($token) {
+                $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                if ($accessToken && $accessToken->tokenable) {
+                    $info['manual_token_user'] = $accessToken->tokenable->id;
+                }
+            }
+        }
 
         if (extension_loaded('imagick')) {
             try {
