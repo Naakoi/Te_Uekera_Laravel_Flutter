@@ -32,6 +32,8 @@ class ApiClient {
 
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
+            options.headers['X-Authorization'] =
+                'Bearer $token'; // Fallback for stripping proxies
           }
 
           if (deviceId == null) {

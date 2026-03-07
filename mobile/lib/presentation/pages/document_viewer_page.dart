@@ -82,6 +82,8 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
     final Map<String, String> headers = {'X-App-Platform': 'mobile_app'};
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
+      headers['X-Authorization'] =
+          'Bearer $token'; // Fallback for stripping proxies
     }
     if (deviceId != null) {
       headers['X-Device-Id'] = deviceId;
