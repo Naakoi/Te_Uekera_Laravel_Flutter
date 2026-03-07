@@ -96,7 +96,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
     }
 
     for (int i = 1; i <= pageCount; i++) {
-      final imageUrl = '${ApiClient.baseUrl}documents/${document.id}/pages/$i';
+      final imageUrl = '${ApiClient.baseUrl}documents/${document.id}/page/$i';
       await DefaultCacheManager().downloadFile(
         imageUrl,
         key: imageUrl,

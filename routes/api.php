@@ -33,7 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/redeem-code', [App\Http\Controllers\RedeemCodeController::class, 'redeem']);
 });
 
-Route::get('/documents/{document}/pages/{page}', [App\Http\Controllers\DocumentController::class, 'pageImage']);
+Route::get('/documents/{document}/page/{page}', [App\Http\Controllers\DocumentController::class, 'pageImage'])->name('api.documents.page');
 
 // Staff-only diagnostic endpoint for debugging Imagick/PDF issues on live servers
 Route::get('/documents/{document}/diag', [App\Http\Controllers\DocumentController::class, 'imagickDiag']);

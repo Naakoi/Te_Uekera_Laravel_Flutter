@@ -81,7 +81,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
       debugPrint("Storage read error in DocumentViewerPage: $e");
     }
 
-    final Map<String, String> headers = {};
+    final Map<String, String> headers = {'X-App-Platform': 'mobile_app'};
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -176,7 +176,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
               builder: (BuildContext context, int index) {
                 final pageNum = index + 1;
                 final baseImageUrl =
-                    '${ApiClient.baseUrl}documents/${widget.document.id}/pages/$pageNum';
+                    '${ApiClient.baseUrl}documents/${widget.document.id}/page/$pageNum';
                 String imageUrl = baseImageUrl;
                 List<String> queryParams = [];
                 if (_deviceId != null) {

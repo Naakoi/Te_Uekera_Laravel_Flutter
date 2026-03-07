@@ -18,13 +18,13 @@ class DocumentController extends Controller
 
         $globalActivated = false;
         $currentUser = auth()->user();
-        
+
         if ($currentUser || $deviceId) {
             $globalQuery = \App\Models\RedeemCode::where('is_used', true)
                 ->whereNull('document_id')
-                ->where(function($q) {
+                ->where(function ($q) {
                     $q->whereNull('expires_at')
-                      ->orWhere('expires_at', '>', now());
+                        ->orWhere('expires_at', '>', now());
                 });
 
             if ($currentUser) {
@@ -64,7 +64,7 @@ class DocumentController extends Controller
             \Illuminate\Support\Facades\Log::info("API Access: Editions list requested from origin: " . request()->header('Origin') . " IP: " . request()->ip());
             $documents = Document::latest()->get();
             $deviceId = request('device_id') ?? request()->cookie('device_id') ?? request()->header('X-Device-Id');
-            
+
             // Fetch user once for the whole request to optimize N+1 issues in loops
             $user = auth('sanctum')->user() ?? auth()->user();
             if (!$user) {
@@ -90,9 +90,9 @@ class DocumentController extends Controller
             if ($user || $deviceId) {
                 $globalQuery = \App\Models\RedeemCode::where('is_used', true)
                     ->whereNull('document_id')
-                    ->where(function($q) {
+                    ->where(function ($q) {
                         $q->whereNull('expires_at')
-                          ->orWhere('expires_at', '>', now());
+                            ->orWhere('expires_at', '>', now());
                     });
 
                 if ($user) {
@@ -100,7 +100,7 @@ class DocumentController extends Controller
                 } else {
                     $globalQuery->where('device_id', $deviceId)->whereNull('user_id');
                 }
-                
+
                 $globalActivated = $globalQuery->exists();
             }
 
@@ -118,7 +118,7 @@ class DocumentController extends Controller
 
                 // Use the pre-fetched user
                 $doc->has_access = $globalActivated || $this->hasAccess($doc, $user);
-                
+
                 $arr = $doc->toArray();
                 $arr['has_access'] = $doc->has_access;
                 $arr['page_count'] = $doc->page_count;
@@ -186,9 +186,13 @@ class DocumentController extends Controller
 
     public function pageImage(Document $document, int $page)
     {
-        Log::info("pageImage request for doc {$document->id}, page $page");
+        $platform = request()->header('X-App-Platform');
+        $deviceId = request('device_id') ?? request()->header('X-Device-Id');
+
+        Log::info("pageImage request for doc {$document->id}, page $page. Platform: $platform, Device: $deviceId");
+
         if ($page !== 1 && !$this->hasAccess($document)) {
-            Log::warning("Access denied for doc {$document->id}, page $page");
+            Log::warning("Access denied for doc {$document->id}, page $page. Platform: $platform, Device: $deviceId");
             abort(403);
         }
 
@@ -240,7 +244,7 @@ class DocumentController extends Controller
                     $flat->destroy();
                     $imagick->clear();
                     $imagick->destroy();
-                } 
+                }
                 // --- 2. Use Ghostscript if available ---
                 else if (!in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && function_exists('exec')) {
                     $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
@@ -253,11 +257,11 @@ class DocumentController extends Controller
                         $page,
                         escapeshellarg($pdfPath)
                     );
-                    
+
                     $output = [];
                     $return_var = -1;
                     exec($command, $output, $return_var);
-                    
+
                     if ($return_var !== 0 || !file_exists($fullPath)) {
                         throw new \Exception("Ghostscript failed to generate page: " . implode(" ", $output));
                     }
@@ -314,14 +318,14 @@ class DocumentController extends Controller
                     $im2->readImage($pdfPath . '[0]');
                 } catch (\Throwable $e2) {
                     if (str_contains($e2->getMessage(), 'security policy')) {
-                         $im2->clear();
-                         $im2->setColorspace(\Imagick::COLORSPACE_SRGB);
-                         $im2->readImage($pdfPath . '[0]');
+                        $im2->clear();
+                        $im2->setColorspace(\Imagick::COLORSPACE_SRGB);
+                        $im2->readImage($pdfPath . '[0]');
                     } else {
                         throw $e2;
                     }
                 }
-                
+
                 $info['imagick_read_page1'] = 'OK';
                 $info['colorspace'] = $im2->getImageColorspace();
                 $info['colorspace_name'] = $this->getColorspaceName($im2->getImageColorspace());
@@ -357,7 +361,7 @@ class DocumentController extends Controller
         $png = base64_decode(
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
         );
-        return response($png, 404, [
+        return response($png, 200, [
             'Content-Type' => 'image/png',
             'Cache-Control' => 'no-store',
             'X-Page-Error' => substr($reason, 0, 200),
@@ -373,10 +377,15 @@ class DocumentController extends Controller
         if (!$user) {
             $token = request('token') ?? request()->bearerToken();
             if ($token) {
+                // If token is base64 encoded or has extra parts, this might fail, 
+                // but usually Sanctum handles the | separator.
                 $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
                 if ($accessToken && $accessToken->tokenable) {
                     $user = $accessToken->tokenable;
                     auth('sanctum')->setUser($user);
+                    Log::info("hasAccess: User identified from token: {$user->id}");
+                } else {
+                    Log::warning("hasAccess: Token provided but user not found for token: " . substr($token, 0, 10) . "...");
                 }
             }
         }
@@ -384,23 +393,26 @@ class DocumentController extends Controller
         /** @var \App\Models\User $user */
         if ($user) {
             if ($user->isAdmin() || $user->isStaff()) {
+                Log::info("hasAccess: Access granted for Admin/Staff user: {$user->id}");
                 return true;
             }
 
             // Check for account-based purchase
             if ($user->purchases()->where('document_id', $document->id)->exists()) {
+                Log::info("hasAccess: Access granted for purchase: user {$user->id}, doc {$document->id}");
                 return true;
             }
 
             // Check for active subscription
             if ($user->hasActiveSubscription()) {
+                Log::info("hasAccess: Access granted for subscription: user {$user->id}");
                 return true;
             }
         }
 
         // Check for active activations (Full Access or Document Specific)
         $deviceId = request('device_id') ?? request()->cookie('device_id') ?? request()->header('X-Device-Id');
-        
+
         if ($user || $deviceId) {
             $activationQuery = \App\Models\RedeemCode::where('is_used', true)
                 ->where(function ($query) use ($document) {
@@ -421,10 +433,12 @@ class DocumentController extends Controller
             }
 
             if ($activationQuery->exists()) {
+                Log::info("hasAccess: Access granted via activation code. User: " . ($user ? $user->id : 'Guest') . ", Device: $deviceId");
                 return true;
             }
         }
 
+        Log::warning("hasAccess: Access DENIED. User: " . ($user ? $user->id : 'Guest') . ", Device: " . ($deviceId ?? 'None') . ", Doc: {$document->id}");
         return false;
     }
 
@@ -511,7 +525,8 @@ class DocumentController extends Controller
         ];
 
         foreach ($diskPaths as $path) {
-            if (file_exists($path)) return $path;
+            if (file_exists($path))
+                return $path;
         }
 
         return null;
@@ -532,8 +547,10 @@ class DocumentController extends Controller
                     $count = $imagick->getNumberImages();
                     $imagick->clear();
                     $imagick->destroy();
-                    if ($count > 0) return $count;
-                } catch (\Throwable $e) {}
+                    if ($count > 0)
+                        return $count;
+                } catch (\Throwable $e) {
+                }
             }
 
             // 2. Try Ghostscript via exec
@@ -545,9 +562,11 @@ class DocumentController extends Controller
                     exec($gsPath . ' -q -dNODISPLAY -dNOSAFER -c "(' . addslashes($path) . ') (r) file runpdfbegin pdfpagecount = quit" 2>&1', $output, $return_var);
                     if ($return_var === 0 && !empty($output)) {
                         $lastLine = trim(end($output));
-                        if (is_numeric($lastLine) && (int) $lastLine > 0) return (int) $lastLine;
+                        if (is_numeric($lastLine) && (int) $lastLine > 0)
+                            return (int) $lastLine;
                     }
-                } catch (\Throwable $e) {}
+                } catch (\Throwable $e) {
+                }
             }
 
             // 3. pure PHP fallback
@@ -555,7 +574,8 @@ class DocumentController extends Controller
             if ($content !== false) {
                 if (preg_match_all('/\/Count\s+(\d+)/', $content, $matches)) {
                     $pageCount = max(array_map('intval', $matches[1]));
-                    if ($pageCount > 0) return $pageCount;
+                    if ($pageCount > 0)
+                        return $pageCount;
                 }
                 $pageEntries = preg_match_all('/\/Type\s*\/Page[^s]/', $content, $m);
                 return $pageEntries > 0 ? $pageEntries : 1;
