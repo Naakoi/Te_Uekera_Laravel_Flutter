@@ -93668,7 +93668,8 @@ case 3:s=2
 break
 case 6:if(i!=null){k=a.b
 k===$&&A.a()
-k.m(0,"Authorization","Bearer "+i)}s=h==null?9:10
+k.m(0,"Authorization","Bearer "+i)
+a.b.m(0,"X-Authorization","Bearer "+i)}s=h==null?9:10
 break
 case 9:h="dev_"+Date.now()+"_"+B.i.bK(B.c.gC(a.cx),1000)
 p=12
@@ -94810,8 +94811,9 @@ break
 case 5:l=t.N
 k=A.av(["X-App-Platform","mobile_app"],l,l)
 l=j.b
-if(l!=null)k.m(0,"Authorization","Bearer "+l)
-l=j.a
+if(l!=null){l="Bearer "+l
+k.m(0,"Authorization",l)
+k.m(0,"X-Authorization",l)}l=j.a
 if(l!=null)k.m(0,"X-Device-Id",l)
 o.ab(new A.ati(j,o,k))
 return A.F(null,r)
