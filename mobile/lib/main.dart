@@ -29,7 +29,7 @@ void main() async {
   final dio = Dio();
   const storage = FlutterSecureStorage();
 
-  final authRemoteDataSource = AuthRemoteDataSourceImpl(null as dynamic);
+  final authRemoteDataSource = AuthRemoteDataSourceImpl();
   final authRepository = AuthRepositoryImpl(
     remoteDataSource: authRemoteDataSource,
     storage: storage,
