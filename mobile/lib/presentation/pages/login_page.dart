@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/auth/auth_event.dart';
 import '../blocs/auth/auth_state.dart';
+import '../blocs/document_bloc.dart';
+import '../blocs/document_event.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LoginPage extends StatefulWidget {
@@ -145,6 +147,9 @@ class _LoginPageState extends State<LoginPage> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
+            // Re-fetch documents now that we have a valid auth token,
+            // so has_access is recalculated correctly for this user.
+            context.read<DocumentBloc>().add(FetchDocuments());
             Navigator.of(context).pop(); // Return to previous screen
             ScaffoldMessenger.of(
               context,
