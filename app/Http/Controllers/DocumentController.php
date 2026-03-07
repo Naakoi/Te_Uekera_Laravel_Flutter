@@ -186,17 +186,22 @@ class DocumentController extends Controller
 
     public function pageImage(Document $document, int $page)
     {
-        // Increase memory for PDF processing - CMYK files are heavy
-        @ini_set('memory_limit', '1024M');
-        @set_time_limit(60);
+        // Version 1.1.4 - Max Reliability Mode
+        @ini_set('memory_limit', '2048M');
+        @set_time_limit(90);
 
-        $platform = request()->header('X-App-Platform');
-        $deviceId = request('device_id') ?? request()->header('X-Device-Id');
+        $platform = request()->header('X-App-Platform') ?? 'Unknown';
+        $deviceId = request('device_id') ?? request()->header('X-Device-Id') ?? 'None';
 
-        Log::info("pageImage request for doc {$document->id}, page $page. Platform: $platform, Device: $deviceId");
+        // Check for token in all possible locations
+        $token = request('token') ?? request()->bearerToken() ?? request()->header('X-Authorization');
+        if ($token)
+            $token = str_replace('Bearer ', '', $token);
+
+        Log::info("PAGE_REQ: Doc {$document->id}, Page $page. Dev: $deviceId, Plat: $platform, Token: " . ($token ? "Present" : "Missing"));
 
         if ($page !== 1 && !$this->hasAccess($document)) {
-            Log::warning("Access denied for doc {$document->id}, page $page. Platform: $platform, Device: $deviceId");
+            Log::warning("PAGE_DENIED: Doc {$document->id}, Page $page. Dev: $deviceId");
             return $this->placeholderPngResponse("Access Denied (403)");
         }
 
@@ -205,24 +210,60 @@ class DocumentController extends Controller
 
         if (!file_exists($fullPath)) {
             $pdfPath = $this->getAbsolutePdfPath($document->file_path);
-
             if (!$pdfPath) {
-                Log::error("PDF source file missing for doc {$document->id}");
-                return $this->placeholderPngResponse("PDF source not found");
+                Log::error("PAGE_ERR: PDF missing for doc {$document->id}");
+                return $this->placeholderPngResponse("PDF source missing");
             }
 
             try {
-                \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
+                if (!file_exists(dirname($fullPath))) {
+                    mkdir(dirname($fullPath), 0755, true);
+                }
 
                 $success = false;
                 $renderErrors = [];
 
-                // --- 1. PREFERRED: Use Ghostscript via exec if available ---
-                if (!in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && function_exists('exec')) {
+                // --- 1. PREFERRED: Imagick (usually more reliable for CMYK on this server) ---
+                if (extension_loaded('imagick')) {
+                    try {
+                        Log::info("PAGE_GEN: Starting Imagick for doc {$document->id} p$page");
+                        $imagick = new \Imagick();
+
+                        if (method_exists($imagick, 'setResourceLimit')) {
+                            $imagick->setResourceLimit(\Imagick::RESOURCETYPE_MEMORY, 1024 * 1024 * 1024); // 1GB
+                        }
+
+                        $imagick->setResolution(150, 150);
+                        $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                        $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                        $imagick->setImageFormat('png');
+                        $imagick->setImageBackgroundColor('white');
+
+                        $flat = $imagick->mergeImageLayers(13); // 13 is FLATTEN constant
+                        $flat->setImageFormat('png');
+                        $flat->writeImage($fullPath);
+
+                        $flat->clear();
+                        $flat->destroy();
+                        $imagick->clear();
+                        $imagick->destroy();
+
+                        if (file_exists($fullPath)) {
+                            $success = true;
+                            Log::info("PAGE_OK: Imagick doc {$document->id} p$page");
+                        }
+                    } catch (\Throwable $imE) {
+                        $renderErrors[] = "IM: " . substr($imE->getMessage(), 0, 100);
+                        Log::error("Imagick page generation error: " . $imE->getMessage());
+                    }
+                }
+
+                // --- 2. FALLBACK: Ghostscript via exec ---
+                if (!$success && !in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && function_exists('exec')) {
                     try {
                         $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
                         $command = sprintf(
-                            "%s -sDEVICE=png16m -o %s -dFirstPage=%d -dLastPage=%d -r150 -dGraphicsAlphaBits=4 -dTextAlphaBits=4 %s 2>&1",
+                            "%s -sDEVICE=png16m -o %s -dFirstPage=%d -dLastPage=%d -r150 %s 2>&1",
                             $gsPath,
                             escapeshellarg($fullPath),
                             $page,
@@ -234,61 +275,21 @@ class DocumentController extends Controller
                         exec($command, $output, $return_var);
                         if ($return_var === 0 && file_exists($fullPath)) {
                             $success = true;
-                            Log::info("Ghostscript success: doc {$document->id} page $page");
+                            Log::info("PAGE_OK: GS doc {$document->id} p$page");
                         } else {
-                            $renderErrors[] = "GS error ($return_var): " . implode(" ", array_slice($output, -1));
+                            $renderErrors[] = "GS: " . implode(" ", array_slice($output, -1));
                         }
                     } catch (\Throwable $gsE) {
                         $renderErrors[] = "GS Exception: " . $gsE->getMessage();
                     }
                 }
 
-                // --- 2. FALLBACK: Use Imagick ---
-                if (!$success && extension_loaded('imagick')) {
-                    try {
-                        Log::info("Attempting Imagick for doc {$document->id} page $page (Memory limit: 1024M)");
-                        $imagick = new \Imagick();
-
-                        // Strict resource limits to prevent server crash
-                        if (method_exists($imagick, 'setResourceLimit')) {
-                            $imagick->setResourceLimit(\Imagick::RESOURCETYPE_MEMORY, 512 * 1024 * 1024); // 512MB
-                            $imagick->setResourceLimit(\Imagick::RESOURCETYPE_MAP, 512 * 1024 * 1024);
-                        }
-
-                        $imagick->setResolution(150, 150);
-                        // Read ONLY requested page to save memory
-                        $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
-
-                        // Force sRGB (especially for CMYK files)
-                        $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
-                        $imagick->setImageFormat('png');
-                        $imagick->setImageBackgroundColor('white');
-
-                        $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-                        $flat->setImageFormat('png');
-                        $flat->writeImage($fullPath);
-
-                        $flat->clear();
-                        $flat->destroy();
-                        $imagick->clear();
-                        $imagick->destroy();
-
-                        if (file_exists($fullPath)) {
-                            $success = true;
-                            Log::info("Imagick success: doc {$document->id} page $page");
-                        }
-                    } catch (\Throwable $imE) {
-                        $renderErrors[] = "Imagick Exception: " . substr($imE->getMessage(), 0, 100);
-                        Log::error("Imagick Error: " . $imE->getMessage());
-                    }
-                }
-
                 if (!$success) {
-                    throw new \Exception("Rendering failed: " . implode(" | ", $renderErrors));
+                    throw new \Exception("All paths failed: " . implode(" | ", $renderErrors));
                 }
 
             } catch (\Throwable $e) {
-                Log::error("Page generation failed: " . $e->getMessage());
+                Log::error("PAGE_FATAL: Doc {$document->id} p$page: " . $e->getMessage());
                 return $this->placeholderPngResponse($e->getMessage());
             }
         }
@@ -305,71 +306,32 @@ class DocumentController extends Controller
      */
     public function imagickDiag(Document $document)
     {
-        // Version 1.1.1 - Enhanced Diag
+        // Version 1.1.4 - Deep Diag
         $pdfPath = $this->getAbsolutePdfPath($document->file_path);
 
-        $gsVersion = "NOT FOUND";
-        $gsPathBinary = "NOT FOUND";
-        if (function_exists('exec')) {
-            $out = [];
-            $ret = -1;
-            exec("gs --version 2>&1", $out, $ret);
-            if ($ret === 0 && !empty($out)) {
-                $gsVersion = $out[0];
-            }
-
-            $out2 = [];
-            $ret2 = -1;
-            exec("which gs 2>&1", $out2, $ret2);
-            if ($ret2 === 0 && !empty($out2)) {
-                $gsPathBinary = $out2[0];
-            }
+        $tokenRaw = request('token') ?? request()->bearerToken() ?? request()->header('X-Authorization');
+        $user = null;
+        if ($tokenRaw) {
+            $tokenRaw = str_replace('Bearer ', '', $tokenRaw);
+            $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($tokenRaw);
+            if ($accessToken)
+                $user = $accessToken->tokenable;
         }
-
-        $user = auth('sanctum')->user() ?? auth()->user();
-        if (!$user) {
-            $token = request('token') ?? request()->bearerToken();
-            if ($token) {
-                $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($accessToken && $accessToken->tokenable) {
-                    $user = $accessToken->tokenable;
-                }
-            }
-        }
-
-        $deviceId = request('device_id') ?? request()->header('X-Device-Id');
+        if (!$user)
+            $user = auth('sanctum')->user() ?? auth()->user();
 
         $info = [
-            'diag_version' => '1.1.3',
+            'diag_version' => '1.1.4',
             'time' => now()->toDateTimeString(),
             'imagick_loaded' => extension_loaded('imagick'),
-            'gs_version' => $gsVersion,
-            'gs_path_binary' => $gsPathBinary,
             'pdf_file_exists' => $pdfPath ? file_exists($pdfPath) : false,
-            'pdf_path' => $pdfPath,
             'pdf_size' => $pdfPath ? filesize($pdfPath) : 0,
-            'identified_user_id' => $user ? $user->id : 'Guest',
-            'identified_user_email' => $user ? $user->email : 'None',
-            'device_id_provided' => $deviceId ?? 'None',
+            'identified_user' => $user ? $user->id . " (" . $user->email . ")" : 'Guest',
+            'token_received' => $tokenRaw ? "YES (" . substr($tokenRaw, 0, 5) . "...)" : "NO",
             'has_full_access' => $this->hasAccess($document, $user),
             'memory_limit' => ini_get('memory_limit'),
             'disable_functions' => ini_get('disable_functions'),
         ];
-
-        if ($info['imagick_loaded'] && $info['pdf_file_exists']) {
-            try {
-                $im = new \Imagick();
-                // Resource limits to prevent server crash
-                $im->setResourceLimit(\Imagick::RESOURCETYPE_MEMORY, 256 * 1024 * 1024); // 256MB
-                $im->setResourceLimit(\Imagick::RESOURCETYPE_MAP, 256 * 1024 * 1024);    // 256MB
-                $im->pingImage($pdfPath);
-                $info['imagick_page_count'] = $im->getNumberImages();
-                $im->clear();
-                $im->destroy();
-            } catch (\Throwable $e) {
-                $info['imagick_ping_error'] = substr($e->getMessage(), 0, 100);
-            }
-        }
 
         return response()->json($info);
     }
@@ -404,72 +366,54 @@ class DocumentController extends Controller
 
     public function hasAccess(Document $document, $user = null)
     {
-        // If already authenticated (via middleware or pre-fetched), use that
-        $user = $user ?? auth('sanctum')->user() ?? auth()->user();
-
-        // If not authenticated, try to manually identify from token (any parameter)
+        // Unify user identification with X-Authorization support
         if (!$user) {
-            $token = request('token') ?? request()->bearerToken();
-            Log::info("hasAccess: No user session. Checking token: " . ($token ? "Found (Starts with " . substr($token, 0, 5) . ")" : "Not Found"));
-
-            if ($token) {
-                $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($accessToken && $accessToken->tokenable) {
-                    $user = $accessToken->tokenable;
-                    auth('sanctum')->setUser($user);
-                    Log::info("hasAccess: User identified from token: {$user->id} ({$user->email})");
-                } else {
-                    Log::warning("hasAccess: Token was provided but is INVALID or EXPIRED.");
+            $user = auth('sanctum')->user() ?? auth()->user();
+            if (!$user) {
+                $token = request('token') ?? request()->bearerToken() ?? request()->header('X-Authorization');
+                if ($token) {
+                    $token = str_replace('Bearer ', '', $token);
+                    $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                    if ($accessToken && $accessToken->tokenable) {
+                        $user = $accessToken->tokenable;
+                        auth('sanctum')->setUser($user);
+                        Log::info("hasAccess: Identified user from token: {$user->id}");
+                    }
                 }
             }
         }
 
         /** @var \App\Models\User $user */
         if ($user) {
-            if ($user->isAdmin() || $user->isStaff()) {
+            if ($user->isAdmin() || $user->isStaff())
                 return true;
-            }
-
-            // Check for account-based purchase
-            if ($user->purchases()->where('document_id', $document->id)->exists()) {
+            if ($user->purchases()->where('document_id', $document->id)->exists())
                 return true;
-            }
-
-            // Check for active subscription
-            if ($user->hasActiveSubscription()) {
+            if ($user->hasActiveSubscription())
                 return true;
-            }
         }
 
         // Check for active activations (Full Access or Document Specific)
-        $deviceId = request('device_id') ?? request()->cookie('device_id') ?? request()->header('X-Device-Id');
+        $deviceId = request('device_id') ?? request()->header('X-Device-Id');
 
         if ($user || $deviceId) {
             $activationQuery = \App\Models\RedeemCode::where('is_used', true)
                 ->where(function ($query) use ($document) {
-                    $query->whereNull('document_id')
-                        ->orWhere('document_id', $document->id);
+                    $query->whereNull('document_id')->orWhere('document_id', $document->id);
                 })
                 ->where(function ($query) {
-                    $query->whereNull('expires_at')
-                        ->orWhere('expires_at', '>', now());
+                    $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
                 });
 
-            if ($user) {
-                // Logged in: check user account (allows access on any device they own)
+            if ($user)
                 $activationQuery->where('user_id', $user->id);
-            } else {
-                // Guest: check device only if not activated by a user
+            else
                 $activationQuery->where('device_id', $deviceId)->whereNull('user_id');
-            }
 
-            if ($activationQuery->exists()) {
-                Log::info("hasAccess: Access granted via activation code. User: " . ($user ? $user->id : 'Guest') . ", Device: $deviceId");
+            if ($activationQuery->exists())
                 return true;
-            }
         }
 
-        Log::warning("hasAccess: Access DENIED. User: " . ($user ? $user->id : 'Guest') . ", Device: " . ($deviceId ?? 'None') . ", Doc: {$document->id}");
         return false;
     }
 
