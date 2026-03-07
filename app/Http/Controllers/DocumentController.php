@@ -340,7 +340,7 @@ class DocumentController extends Controller
         $deviceId = request('device_id') ?? request()->header('X-Device-Id');
 
         $info = [
-            'diag_version' => '1.1.2',
+            'diag_version' => '1.1.3',
             'time' => now()->toDateTimeString(),
             'imagick_loaded' => extension_loaded('imagick'),
             'gs_version' => $gsVersion,
