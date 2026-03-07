@@ -317,10 +317,11 @@ class DocumentController extends Controller
      */
     public function imagickDiag(Document $document)
     {
-        // Version 1.0.8 - Use this to confirm deployment
+        // Version 1.0.9 - Lightweight diag
         $pdfPath = $this->getAbsolutePdfPath($document->file_path);
 
         $gsVersion = "NOT FOUND";
+        $gsPathBinary = "NOT FOUND";
         if (function_exists('exec')) {
             $out = [];
             $ret = -1;
@@ -328,36 +329,33 @@ class DocumentController extends Controller
             if ($ret === 0 && !empty($out)) {
                 $gsVersion = $out[0];
             }
-        }
 
-        $info = [
-            'diag_version' => '1.0.8',
-            'imagick_loaded' => extension_loaded('imagick'),
-            'gs_version' => $gsVersion,
-            'pdf_file_exists' => $pdfPath ? file_exists($pdfPath) : false,
-            'pdf_path' => $pdfPath,
-            'pdf_size' => $pdfPath ? filesize($pdfPath) : 0,
-            'exec_disabled' => in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))),
-            'disable_functions' => ini_get('disable_functions'),
-            'page_count_db' => $document->page_count,
-            'storage_pages_writable' => is_writable(storage_path('app/pages')),
-            'identified_user' => auth('sanctum')->id() ?? 'Guest',
-            'app_platform' => request()->header('X-App-Platform') ?? 'Unknown',
-            'device_id_provided' => request('device_id') ?? request()->header('X-Device-Id') ?? 'None',
-        ];
-
-        // Manual token check same as hasAccess
-        if (!$info['identified_user'] || $info['identified_user'] === 'Guest') {
-            $token = request('token') ?? request()->bearerToken();
-            if ($token) {
-                $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($accessToken && $accessToken->tokenable) {
-                    $info['manual_token_user'] = $accessToken->tokenable->id;
-                }
+            $out2 = [];
+            $ret2 = -1;
+            exec("which gs 2>&1", $out2, $ret2);
+            if ($ret2 === 0 && !empty($out2)) {
+                $gsPathBinary = $out2[0];
             }
         }
 
-        if (extension_loaded('imagick')) {
+        $info = [
+            'diag_version' => '1.0.9',
+            'time' => now()->toDateTimeString(),
+            'imagick_loaded' => extension_loaded('imagick'),
+            'gs_version' => $gsVersion,
+            'gs_path_binary' => $gsPathBinary,
+            'pdf_file_exists' => $pdfPath ? file_exists($pdfPath) : false,
+            'pdf_path' => $pdfPath,
+            'pdf_size' => $pdfPath ? filesize($pdfPath) : 0,
+            'memory_limit' => ini_get('memory_limit'),
+            'max_execution_time' => ini_get('max_execution_time'),
+            'storage_pages_writable' => is_writable(storage_path('app/pages')),
+            'identified_user' => auth('sanctum')->id() ?? 'Guest',
+            'device_id_provided' => request('device_id') ?? request()->header('X-Device-Id') ?? 'None',
+        ];
+
+        // test ping ONLY
+        if ($info['imagick_loaded'] && $info['pdf_file_exists']) {
             try {
                 $im = new \Imagick();
                 $im->pingImage($pdfPath);
