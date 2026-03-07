@@ -43,6 +43,22 @@ Route::post('/check-status', [App\Http\Controllers\RedeemCodeController::class, 
 
 Route::get('/documents', [App\Http\Controllers\DocumentController::class, 'apiIndex']);
 
+Route::get('/debug-log', function () {
+    $path = storage_path('logs/laravel.log');
+    if (!file_exists($path))
+        return response()->json(['error' => 'No log file found']);
+
+    // Read last 2 KB
+    $size = filesize($path);
+    $fp = fopen($path, 'r');
+    if ($size > 2048)
+        fseek($fp, -2048, SEEK_END);
+    $content = fread($fp, 2048);
+    fclose($fp);
+
+    return response($content)->header('Content-Type', 'text/plain');
+});
+
 Route::get('/images/{path}', function ($path) {
     // Prevent directory traversal
     if (str_contains($path, '..')) {
