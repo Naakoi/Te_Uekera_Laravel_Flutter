@@ -56,7 +56,6 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
     try {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await ScreenProtector.preventScreenshotOn();
-        await ScreenProtector.protectDataLeakageWithColor(Colors.black);
         debugPrint("Screen Protection: ENABLED");
       });
     } catch (e) {
@@ -66,7 +65,6 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
 
   Future<void> _disableScreenProtection() async {
     await ScreenProtector.preventScreenshotOff();
-    await ScreenProtector.protectDataLeakageOff();
   }
 
   Future<void> _loadAuthParams() async {

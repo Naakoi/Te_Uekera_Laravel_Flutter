@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
@@ -19,24 +18,13 @@ import 'package:mobile/presentation/pages/main_scaffold.dart';
 import 'package:mobile/data/datasources/payment_remote_datasource.dart';
 import 'package:mobile/data/repositories/payment_repository_impl.dart';
 import 'package:mobile/presentation/blocs/payment/payment_bloc.dart';
-import 'package:screen_protector/screen_protector.dart';
+// REMOVED: screen_protector import as it's no longer used in main.dart
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Apply Global Screen Protection (only on mobile, handled platform-specifically)
-  if (!kIsWeb) {
-    try {
-      // Both of these rely on native implementations.
-      // On Android, FLAG_SECURE handles both screenshots and snapshots beautifully.
-      // On iOS, we need these explicit calls for robust protection.
-      await ScreenProtector.preventScreenshotOn();
-      await ScreenProtector.protectDataLeakageWithColor(Colors.black);
-      debugPrint("Global Screen Protection: ENABLED");
-    } catch (e) {
-      debugPrint("Error initializing screen protection: $e");
-    }
-  }
+  // The ScreenProtector calls are removed from here as per the instruction.
+  // The `screen_protector` import is no longer needed in this file.
 
   final dio = Dio();
   const storage = FlutterSecureStorage();
