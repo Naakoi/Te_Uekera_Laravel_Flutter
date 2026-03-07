@@ -1,5 +1,13 @@
+import 'package:dio/dio.dart';
 import 'package:mobile/core/utils/api_client.dart';
 import 'package:mobile/data/models/document_model.dart';
+
+class SessionExpiredException implements Exception {
+  final String message;
+  SessionExpiredException(this.message);
+  @override
+  String toString() => message;
+}
 
 class DocumentRemoteDataSource {
   final ApiClient apiClient;
@@ -17,6 +25,19 @@ class DocumentRemoteDataSource {
           'Server returned ${response.statusCode}: ${response.statusMessage}',
         );
       }
+    } on DioException catch (e) {
+      // If server explicitly says session expired, throw a typed exception
+      // so the AuthBloc can intercept and force re-login
+      if (e.response?.statusCode == 401) {
+        final data = e.response?.data;
+        if (data is Map && data['requires_reauth'] == true) {
+          throw SessionExpiredException(
+            data['message'] ?? 'Your session has expired. Please log in again.',
+          );
+        }
+      }
+      print('DocumentRemoteDataSource: Error fetching documents: $e');
+      rethrow;
     } catch (e) {
       print('DocumentRemoteDataSource: Error fetching documents: $e');
       rethrow;

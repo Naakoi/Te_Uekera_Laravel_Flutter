@@ -6,6 +6,9 @@ import 'package:mobile/presentation/blocs/document_event.dart';
 import 'package:mobile/presentation/blocs/document_state.dart';
 import 'package:mobile/data/models/document_model.dart';
 import 'package:mobile/core/utils/api_client.dart';
+import 'package:mobile/presentation/blocs/auth/auth_bloc.dart';
+import 'package:mobile/presentation/blocs/auth/auth_event.dart';
+import 'login_page.dart';
 import 'document_details_page.dart';
 
 class DocumentListPage extends StatefulWidget {
@@ -95,215 +98,247 @@ class _DocumentListPageState extends State<DocumentListPage> {
             crossAxisCount = 2;
           }
 
-          return CustomScrollView(
-            slivers: [
-              _buildAppBar(context),
-              _buildShopHeader(context),
-              _buildControls(context),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                sliver: BlocBuilder<DocumentBloc, DocumentState>(
-                  builder: (context, state) {
-                    if (state is DocumentLoading) {
-                      return const SliverToBoxAdapter(
-                        child: Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 100),
-                            child: CircularProgressIndicator(
-                              color: Color(0xFFbe1e2d),
+          return BlocListener<DocumentBloc, DocumentState>(
+            listener: (context, state) {
+              if (state is DocumentSessionExpired) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.orange[800],
+                    duration: const Duration(seconds: 5),
+                    action: SnackBarAction(
+                      label: 'LOGIN',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+                // Clear local auth state as token is already dead on server
+                context.read<AuthBloc>().add(AuthLogoutRequested());
+              }
+            },
+            child: CustomScrollView(
+              slivers: [
+                _buildAppBar(context),
+                _buildShopHeader(context),
+                _buildControls(context),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  sliver: BlocBuilder<DocumentBloc, DocumentState>(
+                    builder: (context, state) {
+                      if (state is DocumentLoading) {
+                        return const SliverToBoxAdapter(
+                          child: Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 100),
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFbe1e2d),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    } else if (state is DocumentLoaded) {
-                      final documents = _getFilteredAndSortedDocuments(
-                        state.documents,
-                      );
+                        );
+                      } else if (state is DocumentLoaded) {
+                        final documents = _getFilteredAndSortedDocuments(
+                          state.documents,
+                        );
 
-                      if (documents.isEmpty) {
+                        if (documents.isEmpty) {
+                          return SliverToBoxAdapter(
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 100),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.search_off,
+                                      size: 64,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No matching editions found.',
+                                      style: GoogleFonts.inter(
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    if (_searchQuery.isNotEmpty ||
+                                        _filterStatus != 'all')
+                                      TextButton(
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() {
+                                            _searchQuery = '';
+                                            _filterStatus = 'all';
+                                            _sortBy = 'newest';
+                                          });
+                                        },
+                                        child: const Text(
+                                          'Clear all filters',
+                                          style: TextStyle(
+                                            color: Color(0xFFbe1e2d),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        Widget sliverContent;
+                        if (_isGridView) {
+                          sliverContent = SliverGrid(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  childAspectRatio: 0.6,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 24,
+                                ),
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              return _buildPremierCard(
+                                context,
+                                documents[index],
+                              );
+                            }, childCount: documents.length),
+                          );
+                        } else {
+                          sliverContent = SliverList(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              // In list view, we might want to constrain width on large screens
+                              return Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 800,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: _buildListItem(
+                                      context,
+                                      documents[index],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }, childCount: documents.length),
+                          );
+                        }
+
+                        if (state.isOffline) {
+                          return SliverMainAxisGroup(
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.offline_bolt,
+                                        color: Colors.orange,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Offline mode. Showing saved documents. Please connect to the internet to update.',
+                                          style: GoogleFonts.inter(
+                                            color: Colors.orange[800],
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              sliverContent,
+                            ],
+                          );
+                        }
+
+                        return sliverContent;
+                      } else if (state is DocumentError) {
                         return SliverToBoxAdapter(
                           child: Center(
                             child: Padding(
-                              padding: const EdgeInsets.only(top: 100),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 80,
+                                horizontal: 20,
+                              ),
                               child: Column(
                                 children: [
-                                  Icon(
-                                    Icons.search_off,
-                                    size: 64,
-                                    color: Colors.grey[400],
+                                  const Icon(
+                                    Icons.error_outline,
+                                    size: 48,
+                                    color: Colors.red,
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'No matching editions found.',
+                                    'Unable to load editions.',
                                     style: GoogleFonts.inter(
-                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[700],
                                     ),
                                   ),
-                                  if (_searchQuery.isNotEmpty ||
-                                      _filterStatus != 'all')
-                                    TextButton(
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        setState(() {
-                                          _searchQuery = '';
-                                          _filterStatus = 'all';
-                                          _sortBy = 'newest';
-                                        });
-                                      },
-                                      child: const Text(
-                                        'Clear all filters',
-                                        style: TextStyle(
-                                          color: Color(0xFFbe1e2d),
-                                        ),
-                                      ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    state.message,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 12,
                                     ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  ElevatedButton(
+                                    onPressed: () => context
+                                        .read<DocumentBloc>()
+                                        .add(FetchDocuments()),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFbe1e2d),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('RETRY'),
+                                  ),
                                 ],
                               ),
                             ),
                           ),
                         );
                       }
-
-                      Widget sliverContent;
-                      if (_isGridView) {
-                        sliverContent = SliverGrid(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                childAspectRatio: 0.6,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 24,
-                              ),
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            return _buildPremierCard(context, documents[index]);
-                          }, childCount: documents.length),
-                        );
-                      } else {
-                        sliverContent = SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            // In list view, we might want to constrain width on large screens
-                            return Center(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 800,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: _buildListItem(
-                                    context,
-                                    documents[index],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }, childCount: documents.length),
-                        );
-                      }
-
-                      if (state.isOffline) {
-                        return SliverMainAxisGroup(
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                margin: const EdgeInsets.only(bottom: 16),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.orange.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.offline_bolt,
-                                      color: Colors.orange,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'Offline mode. Showing saved documents. Please connect to the internet to update.',
-                                        style: GoogleFonts.inter(
-                                          color: Colors.orange[800],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            sliverContent,
-                          ],
-                        );
-                      }
-
-                      return sliverContent;
-                    } else if (state is DocumentError) {
-                      return SliverToBoxAdapter(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 80,
-                              horizontal: 20,
-                            ),
-                            child: Column(
-                              children: [
-                                const Icon(
-                                  Icons.error_outline,
-                                  size: 48,
-                                  color: Colors.red,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Unable to load editions.',
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  state.message,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.grey[500],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                ElevatedButton(
-                                  onPressed: () => context
-                                      .read<DocumentBloc>()
-                                      .add(FetchDocuments()),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFbe1e2d),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text('RETRY'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-                    return const SliverToBoxAdapter(child: SizedBox.shrink());
-                  },
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    },
+                  ),
                 ),
-              ),
-              const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-            ],
+                const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+              ],
+            ),
           );
         },
       ),

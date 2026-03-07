@@ -31,3 +31,10 @@ class DocumentError extends DocumentState {
   @override
   List<Object?> get props => [message];
 }
+
+class DocumentSessionExpired extends DocumentState {
+  final String message;
+  DocumentSessionExpired(this.message);
+  @override
+  List<Object?> get props => [message];
+}

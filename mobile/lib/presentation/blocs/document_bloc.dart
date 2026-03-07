@@ -3,6 +3,8 @@ import 'package:mobile/data/repositories/document_repository_impl.dart';
 import 'document_event.dart';
 import 'document_state.dart';
 
+import 'package:mobile/data/datasources/document_remote_datasource.dart';
+
 class DocumentBloc extends Bloc<DocumentEvent, DocumentState> {
   final DocumentRepositoryImpl repository;
 
@@ -12,6 +14,8 @@ class DocumentBloc extends Bloc<DocumentEvent, DocumentState> {
       try {
         final documents = await repository.getDocuments();
         emit(DocumentLoaded(documents, isOffline: false));
+      } on SessionExpiredException catch (e) {
+        emit(DocumentSessionExpired(e.message));
       } catch (e) {
         // Network unavailable — try SQLite cache
         try {
