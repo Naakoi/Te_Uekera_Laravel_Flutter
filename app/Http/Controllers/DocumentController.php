@@ -214,64 +214,93 @@ class DocumentController extends Controller
                 // Ensure the cache directory exists
                 \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory("pages/{$document->id}");
 
-                // --- 1. Use Imagick if available ---
-                if (extension_loaded('imagick')) {
-                    $imagick = new \Imagick();
+                $success = false;
+                $renderErrors = [];
+
+                // --- 1. PREFERRED: Use Ghostscript via exec if available ---
+                // Ghostscript is usually much faster and uses less RAM for PDF rendering than Imagick delegates.
+                if (!in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && function_exists('exec')) {
                     try {
+                        $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
+                        Log::info("Attempting Ghostscript rendering for doc {$document->id} page $page");
+
+                        // Render specific page to PNG
+                        $command = sprintf(
+                            "%s -sDEVICE=png16m -o %s -dFirstPage=%d -dLastPage=%d -r150 -dGraphicsAlphaBits=4 -dTextAlphaBits=4 %s 2>&1",
+                            $gsPath,
+                            escapeshellarg($fullPath),
+                            $page,
+                            $page,
+                            escapeshellarg($pdfPath)
+                        );
+
+                        $output = [];
+                        $return_var = -1;
+                        exec($command, $output, $return_var);
+
+                        if ($return_var === 0 && file_exists($fullPath)) {
+                            $success = true;
+                            Log::info("Ghostscript success for doc {$document->id} page $page");
+                        } else {
+                            $renderErrors[] = "GS error ($return_var): " . implode(" ", array_slice($output, -2));
+                        }
+                    } catch (\Throwable $gsE) {
+                        $renderErrors[] = "GS Exception: " . $gsE->getMessage();
+                    }
+                }
+
+                // --- 2. FALLBACK: Use Imagick if Ghostscript failed or is unavailable ---
+                if (!$success && extension_loaded('imagick')) {
+                    try {
+                        Log::info("Attempting Imagick rendering for doc {$document->id} page $page");
+                        $imagick = new \Imagick();
+
+                        // Set resolution before reading PDF for quality
                         $imagick->setResolution(150, 150);
+
+                        // Read only the specific page (0-indexed in Imagick)
                         $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
-                    } catch (\Throwable $e) {
+
+                        // Handle potential CMYK issues
+                        $colorspace = $imagick->getImageColorspace();
+                        if ($colorspace === \Imagick::COLORSPACE_CMYK) {
+                            $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                        } else {
+                            $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+                        }
+
+                        $imagick->setImageFormat('png');
+                        $imagick->setImageCompressionQuality(90);
+                        $imagick->setImageBackgroundColor('white');
+
+                        // Flatten to handle transparency issues in some viewers
+                        $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+                        $flat->setImageFormat('png');
+                        $flat->writeImage($fullPath);
+
+                        $flat->clear();
+                        $flat->destroy();
                         $imagick->clear();
-                        $imagick->readImage($pdfPath . '[' . ($page - 1) . ']');
+                        $imagick->destroy();
+
+                        if (file_exists($fullPath)) {
+                            $success = true;
+                            Log::info("Imagick success for doc {$document->id} page $page");
+                        }
+                    } catch (\Throwable $imE) {
+                        $renderErrors[] = "Imagick Exception: " . substr($imE->getMessage(), 0, 100);
                     }
-
-                    $colorspace = $imagick->getImageColorspace();
-                    if ($colorspace === \Imagick::COLORSPACE_CMYK) {
-                        $imagick->setImageColorspace(\Imagick::COLORSPACE_CMYK);
-                        $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
-                    } else {
-                        $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
-                    }
-
-                    $imagick->setImageFormat('png');
-                    $imagick->setImageCompressionQuality(90);
-                    $imagick->setImageBackgroundColor('white');
-
-                    $flat = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-                    $flat->setImageFormat('png');
-                    $flat->writeImage($fullPath);
-                    $flat->clear();
-                    $flat->destroy();
-                    $imagick->clear();
-                    $imagick->destroy();
-                }
-                // --- 2. Use Ghostscript if available ---
-                else if (!in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && function_exists('exec')) {
-                    $gsPath = file_exists('/usr/bin/gs') ? '/usr/bin/gs' : 'gs';
-                    // Render specific page to PNG
-                    $command = sprintf(
-                        "%s -sDEVICE=png16m -o %s -dFirstPage=%d -dLastPage=%d -r150 -dGraphicsAlphaBits=4 -dTextAlphaBits=4 %s 2>&1",
-                        $gsPath,
-                        escapeshellarg($fullPath),
-                        $page,
-                        $page,
-                        escapeshellarg($pdfPath)
-                    );
-
-                    $output = [];
-                    $return_var = -1;
-                    exec($command, $output, $return_var);
-
-                    if ($return_var !== 0 || !file_exists($fullPath)) {
-                        throw new \Exception("Ghostscript failed to generate page: " . implode(" ", $output));
-                    }
-                } else {
-                    throw new \Exception("No rendering engine available (Imagick or Ghostscript)");
                 }
 
-                Log::info("Page $page generated and cached for doc {$document->id}");
+                if (!$success) {
+                    $combinedErrors = implode(" | ", $renderErrors);
+                    throw new \Exception("All rendering paths failed for doc {$document->id} page $page: $combinedErrors");
+                }
+
+                Log::info("Page $page successfully generated and cached for doc {$document->id}");
             } catch (\Throwable $e) {
-                Log::error("Page generation failed for doc {$document->id} page $page: " . $e->getMessage());
+                Log::error("CRITICAL: Page generation failed for doc {$document->id} page $page: " . $e->getMessage());
+                // Return placeholder to prevent 500, but app will log the error header
                 return $this->placeholderPngResponse($e->getMessage());
             }
         }
