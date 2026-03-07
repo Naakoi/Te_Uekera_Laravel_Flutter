@@ -164,6 +164,42 @@ class _DocumentViewerPageState extends State<DocumentViewerPage>
 
     final int pageCount = widget.document.pageCount ?? 0;
 
+    if (pageCount == 0) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.description_outlined,
+                color: Colors.white54,
+                size: 64,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Document has no pages",
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "ID: ${widget.document.id}",
+                style: const TextStyle(color: Colors.white54, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
